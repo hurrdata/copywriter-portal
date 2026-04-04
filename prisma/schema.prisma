@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Facility {
+  id               Int      @id @default(autoincrement())
+  storeNumber      String   @unique
+  address          String
+  city             String
+  state            String
+  zip              String
+  
+  // Storing the rich data from the Excel flat file for easy UI mapping
+  geoData          Json?    
+  demographicData  Json?    
+  
+  // Relations
+  draft            CopyDraft?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CopyDraft {
+  id               Int      @id @default(autoincrement())
+  
+  introParagraph   String   @db.Text
+  bullet1          String   @db.Text
+  bullet2          String   @db.Text
+  bullet3          String   @db.Text
+  bullet4          String   @db.Text
+  
+  // 'Pending', 'Approved', 'Needs Revision'
+  status           String   @default("Pending") 
+  
+  facilityId       Int      @unique
+  facility         Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
