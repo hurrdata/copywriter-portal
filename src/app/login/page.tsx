@@ -63,7 +63,7 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Master Password</label>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Password</label>
             <div className="relative">
               <Lock className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
               <input 
