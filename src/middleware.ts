@@ -2,27 +2,23 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  const basicAuth = req.headers.get('authorization')
   const url = req.nextUrl
+  const isAuthenticated = req.cookies.has('exr_auth')
 
-  // Require auth by default for all routes
-  if (basicAuth) {
-    const authValue = basicAuth.split(' ')[1]
-    const [user, pwd] = atob(authValue).split(':')
-
-    if (user === process.env.AUTH_USER && pwd === process.env.AUTH_PASS) {
-      return NextResponse.next()
-    }
+  // Allow access to the login page and Next.js static assets
+  if (url.pathname === '/login' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) {
+    return NextResponse.next()
   }
 
-  url.pathname = '/api/auth'
-  return new NextResponse('Auth required', {
-    status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Secure Area"' },
-  })
+  // Redirect to login page instantly if the cookie is missing
+  if (!isAuthenticated) {
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  return NextResponse.next()
 }
 
-// Config to protect all routes (ignore next static files and images)
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }

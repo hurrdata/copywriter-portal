@@ -41,6 +41,7 @@ model CopyDraft {
   
   // 'Pending', 'Approved', 'Needs Revision'
   status           String   @default("Pending") 
+  approvedBy       String?
   
   facilityId       Int      @unique
   facility         Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
