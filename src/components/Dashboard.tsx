@@ -222,15 +222,15 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                      <div className="grid grid-cols-2 gap-4">
                        <div>
                          <span className="text-xs text-gray-500 font-medium">Nearest Interstate</span>
-                         <p className="font-bold text-sm text-gray-800">{geo['Nearest_Interstate'] || 'N/A'}</p>
+                         <p className="font-bold text-sm text-gray-800">{geo['nearest_interstate'] || 'N/A'}</p>
                        </div>
                        <div>
                          <span className="text-xs text-gray-500 font-medium">Distance</span>
-                         <p className="font-bold text-sm text-gray-800">{Number(geo['Distance_to_Interstate_Miles'] || 0).toFixed(2)} mi</p>
+                         <p className="font-bold text-sm text-gray-800">{Number(geo['interstate_distance_mi'] || 0).toFixed(2)} mi</p>
                        </div>
                        <div className="col-span-2 pt-2 border-t border-gray-100">
                          <span className="text-xs text-gray-500 font-medium">Nearest Airport</span>
-                         <p className="font-bold text-sm text-gray-800">{geo['Nearest_Airport'] || 'N/A'} <span className="text-gray-400 font-normal">({Number(geo['Distance_to_Airport_Miles'] || 0).toFixed(2)} mi)</span></p>
+                         <p className="font-bold text-sm text-gray-800">{geo['nearest_airport'] || 'N/A'} <span className="text-gray-400 font-normal">({Number(geo['airport_distance_mi'] || 0).toFixed(2)} mi)</span></p>
                        </div>
                      </div>
                    </div>
@@ -266,11 +266,11 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                      <div className="space-y-3">
                        <div className="flex justify-between items-center pb-2 border-b border-gray-50">
                          <span className="text-sm font-medium text-gray-600">University</span>
-                         <span className="text-sm font-bold text-gray-900">{geo['Nearest_University'] || 'None'}</span>
+                         <span className="text-sm font-bold text-gray-900">{geo['nearest_university'] || 'None'}</span>
                        </div>
                        <div className="flex justify-between items-center">
                          <span className="text-sm font-medium text-gray-600">Military Base</span>
-                         <span className="text-sm font-bold text-gray-900">{geo['Nearest_Military'] || 'None'}</span>
+                         <span className="text-sm font-bold text-gray-900">{geo['nearest_military_base'] || 'None'}</span>
                        </div>
                      </div>
                    </div>
