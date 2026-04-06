@@ -249,11 +249,11 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                        </div>
                        <div>
                          <span className="text-xs text-gray-500 font-medium">Content Hook</span>
-                         <p className="font-semibold text-sm text-gray-800 mt-1">{geo['Content Hook'] || 'N/A'}</p>
+                         <p className="font-semibold text-sm text-gray-800 mt-1">{geo['Content Hook (Bullet 2)'] || 'N/A'}</p>
                        </div>
                        <div>
                          <span className="text-xs text-gray-500 font-medium block">County</span>
-                         <p className="font-bold text-sm text-gray-800">{geo['County_Name'] || 'N/A'}</p>
+                         <p className="font-bold text-sm text-gray-800">{geo['county_name'] || 'N/A'}</p>
                        </div>
                      </div>
                    </div>
