@@ -201,14 +201,11 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                   const tag = (activeFacility.draft as any)?.[`bullet${num}Tag`];
                   return (
                     <div key={num} className="relative group">
-                       <label className="block text-xs font-bold text-green-700 uppercase tracking-wider mb-2 flex items-center gap-2">
-                         <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-800" style={{ fontSize: '10px' }}>{num}</div>
-                         Bullet {num}
-                         {tag && (
-                           <span className="ml-auto bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded border border-gray-200 lowercase tracking-normal font-medium">
-                             Type: {tag}
-                           </span>
-                         )}
+                       <label className="block mb-2 flex items-center gap-3">
+                         <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-800 font-bold shrink-0" style={{ fontSize: '11px' }}>{num}</div>
+                         <span className="text-sm font-black text-green-700 uppercase tracking-tight">
+                           {tag || `Bullet ${num}`}
+                         </span>
                        </label>
                        <textarea 
                          value={(editForm as any)[`bullet${num}`]}
