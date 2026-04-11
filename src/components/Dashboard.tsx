@@ -197,19 +197,27 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                    />
                 </div>
                 
-                {[1, 2, 3, 4].map(num => (
-                  <div key={num} className="relative group">
-                     <label className="block text-xs font-bold text-green-700 uppercase tracking-wider mb-2 flex items-center gap-2">
-                       <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-800" style={{ fontSize: '10px' }}>{num}</div>
-                       Bullet {num}
-                     </label>
-                     <textarea 
-                       value={(editForm as any)[`bullet${num}`]}
-                       onChange={(e) => setEditForm({...editForm, [`bullet${num}`]: e.target.value})}
-                       className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 leading-relaxed resize-none h-28 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
-                     />
-                  </div>
-                ))}
+                {[1, 2, 3, 4].map(num => {
+                  const tag = (activeFacility.draft as any)?.[`bullet${num}Tag`];
+                  return (
+                    <div key={num} className="relative group">
+                       <label className="block text-xs font-bold text-green-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                         <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-800" style={{ fontSize: '10px' }}>{num}</div>
+                         Bullet {num}
+                         {tag && (
+                           <span className="ml-auto bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded border border-gray-200 lowercase tracking-normal font-medium">
+                             Type: {tag}
+                           </span>
+                         )}
+                       </label>
+                       <textarea 
+                         value={(editForm as any)[`bullet${num}`]}
+                         onChange={(e) => setEditForm({...editForm, [`bullet${num}`]: e.target.value})}
+                         className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 leading-relaxed resize-none h-28 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
+                       />
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

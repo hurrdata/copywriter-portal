@@ -35,9 +35,13 @@ model CopyDraft {
   
   introParagraph   String   @db.Text
   bullet1          String   @db.Text
+  bullet1Tag       String?
   bullet2          String   @db.Text
+  bullet2Tag       String?
   bullet3          String   @db.Text
+  bullet3Tag       String?
   bullet4          String   @db.Text
+  bullet4Tag       String?
   
   // 'Pending', 'Approved', 'Needs Revision'
   status           String   @default("Pending") 
