@@ -38,11 +38,16 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
     }
   }, [activeFacility])
 
-  const filteredFacilities = facilities.filter(f => {
-    const matchesSearch = f.storeNumber.includes(searchTerm) || f.city.toLowerCase().includes(searchTerm.toLowerCase())
-    if (filter === 'All') return matchesSearch
-    return matchesSearch && f.draft?.status === filter
-  })
+  const filteredFacilities = facilities
+    .filter(f => {
+      const matchesSearch = f.storeNumber.includes(searchTerm) || f.city.toLowerCase().includes(searchTerm.toLowerCase())
+      if (filter === 'All') return matchesSearch
+      return matchesSearch && f.draft?.status === filter
+    })
+    .sort((a, b) => {
+      // Numeric sort for store numbers (101, 102, 1013)
+      return parseInt(a.storeNumber, 10) - parseInt(b.storeNumber, 10)
+    })
 
   const handleSave = async () => {
     if (!activeFacility?.draft) return
