@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 
 export async function getFacilitiesWithDrafts() {
-  return await prisma.facility.findMany({
+  const facilities = await prisma.facility.findMany({
     include: {
       draft: true,
     },
@@ -12,6 +12,13 @@ export async function getFacilitiesWithDrafts() {
       storeNumber: 'asc',
     },
   })
+  
+  // Debug log for Vercel logs to confirm schema visibility
+  if (facilities[0]?.draft) {
+    console.log("DB Sample Check (#102):", facilities.find(f => f.storeNumber === '102')?.draft);
+  }
+  
+  return facilities
 }
 
 export async function updateDraftStatus(draftId: number, status: string) {
