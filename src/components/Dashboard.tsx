@@ -177,12 +177,17 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
             {/* Editor Side (Left) */}
             <div className="w-3/5 border-r border-gray-200 overflow-y-auto p-8 bg-white relative">
               
-              {!activeFacility.draft && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
-                  <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center border border-gray-100">
-                    <Clock className="w-12 h-12 text-gray-300 mb-4 animate-pulse" />
-                    <h3 className="text-lg font-bold">AI Generation Pending</h3>
-                    <p className="text-sm text-gray-500 mt-2">The background script hasn't reached this store yet.</p>
+              {(!activeFacility.draft || !(activeFacility.draft as any).bullet1Tag) && (
+                <div className="absolute inset-0 bg-white flex items-center justify-center z-20">
+                  <div className="flex flex-col items-center max-w-sm text-center p-8">
+                    <div className="w-16 h-16 rounded-3xl bg-amber-50 flex items-center justify-center mb-8 border border-amber-100 shadow-sm">
+                      <Clock className="w-8 h-8 text-amber-500" />
+                    </div>
+                    <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-loose">Expansion Content Scheduled</h3>
+                    <p className="text-sm text-gray-500 mt-4 leading-relaxed tracking-wide">
+                      This facility is scheduled for the next phase of the 879-store expansion. 
+                      <span className="block mt-4 font-bold text-green-700">Please review one of the Top 30 stores for the 'Pro' content demo.</span>
+                    </p>
                   </div>
                 </div>
               )}
