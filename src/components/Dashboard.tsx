@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, MapPin, CheckCircle2, Clock, Map, Navigation, Car, Landmark } from 'lucide-react'
+import { Search, MapPin, CheckCircle2, Clock, Map, Navigation, Car, Landmark, Users, Download, FileText, Crosshair, Clipboard } from 'lucide-react'
 import { updateDraftStatus, saveDraftContent } from '@/app/actions'
 
 export default function Dashboard({ initialFacilities }: { initialFacilities: any[] }) {
@@ -9,6 +9,22 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
   const [activeId, setActiveId] = useState<number | null>(initialFacilities[0]?.id || null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState('All') // All, Pending, Approved
+  const [copySuccess, setCopySuccess] = useState(false)
+
+  const BULLET_CATEGORIES = [
+    'Home Community',
+    'Nearby Neighborhoods',
+    'Second City Draw',
+    'Interstate/Highway Exit',
+    'Airport Proximity',
+    'University/College Proximity',
+    'Military Base/Community',
+    'Local Schools',
+    'Notable Nearby Landmark',
+    'Marina/Waterfront',
+    'RV Park/Outdoor Recreation',
+    'Urban Residential Communities'
+  ]
 
   const activeFacility = facilities.find(f => f.id === activeId)
   
@@ -16,9 +32,13 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
   const [editForm, setEditForm] = useState({
     introParagraph: '',
     bullet1: '',
+    bullet1Tag: '',
     bullet2: '',
+    bullet2Tag: '',
     bullet3: '',
-    bullet4: ''
+    bullet3Tag: '',
+    bullet4: '',
+    bullet4Tag: ''
   })
 
   // Sync editor when switching facilities
@@ -27,13 +47,17 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
       setEditForm({
         introParagraph: activeFacility.draft.introParagraph || '',
         bullet1: activeFacility.draft.bullet1 || '',
+        bullet1Tag: activeFacility.draft.bullet1Tag || '',
         bullet2: activeFacility.draft.bullet2 || '',
+        bullet2Tag: activeFacility.draft.bullet2Tag || '',
         bullet3: activeFacility.draft.bullet3 || '',
-        bullet4: activeFacility.draft.bullet4 || ''
+        bullet3Tag: activeFacility.draft.bullet3Tag || '',
+        bullet4: activeFacility.draft.bullet4 || '',
+        bullet4Tag: activeFacility.draft.bullet4Tag || ''
       })
     } else {
       setEditForm({
-        introParagraph: '', bullet1: '', bullet2: '', bullet3: '', bullet4: ''
+        introParagraph: '', bullet1: '', bullet1Tag: '', bullet2: '', bullet2Tag: '', bullet3: '', bullet3Tag: '', bullet4: '', bullet4Tag: ''
       })
     }
   }, [activeFacility])
@@ -45,7 +69,6 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
       return matchesSearch && f.draft?.status === filter
     })
     .sort((a, b) => {
-      // Numeric sort for store numbers (101, 102, 1013)
       return parseInt(a.storeNumber, 10) - parseInt(b.storeNumber, 10)
     })
 
@@ -68,7 +91,42 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
     await saveDraftContent(activeFacility.draft.id, editForm)
   }
 
-  // Parse Geodata from DB safely
+  const generateHTML = () => {
+    return `<p>${editForm.introParagraph}</p>\n<ul>\n` +
+      `  <li><strong>${editForm.bullet1Tag}:</strong> ${editForm.bullet1}</li>\n` +
+      `  <li><strong>${editForm.bullet2Tag}:</strong> ${editForm.bullet2}</li>\n` +
+      `  <li><strong>${editForm.bullet3Tag}:</strong> ${editForm.bullet3}</li>\n` +
+      `  <li><strong>${editForm.bullet4Tag}:</strong> ${editForm.bullet4}</li>\n` +
+      `</ul>`;
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generateHTML());
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Store Number', 'Status', 'HTML Output'];
+    const rows = facilities.map(f => {
+      const html = `<p>${f.draft?.introParagraph || ''}</p><ul>` +
+          `<li><strong>${f.draft?.bullet1Tag || ''}:</strong> ${f.draft?.bullet1 || ''}</li>` +
+          `<li><strong>${f.draft?.bullet2Tag || ''}:</strong> ${f.draft?.bullet2 || ''}</li>` +
+          `<li><strong>${f.draft?.bullet3Tag || ''}:</strong> ${f.draft?.bullet3 || ''}</li>` +
+          `<li><strong>${f.draft?.bullet4Tag || ''}:</strong> ${f.draft?.bullet4 || ''}</li></ul>`;
+      return [f.storeNumber, f.draft?.status || 'Pending', `"${html.replace(/"/g, '""')}"`];
+    });
+
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "exr_pro_copy_expansion.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   let geo = null
   let demo = null
   if (activeFacility?.geoData) {
@@ -139,9 +197,6 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
               <span className="text-xs text-gray-500 truncate">{facility.city}, {facility.state}</span>
             </button>
           ))}
-          {filteredFacilities.length === 0 && (
-            <div className="text-center text-gray-400 text-sm mt-10">No locations found.</div>
-          )}
         </div>
       </div>
 
@@ -164,6 +219,12 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                }`}>
                  {activeFacility.draft?.status === 'Approved' ? 'Approved' : 'Needs Review'}
                </span>
+               <button 
+                onClick={handleExportCSV}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold border border-gray-200 flex items-center gap-2 transition-all"
+               >
+                 <Download size={16} /> Export All (CSV)
+               </button>
                <button 
                 onClick={handleSave}
                 className="bg-green-700 hover:bg-green-800 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md shadow-green-700/20 transition-all border border-green-800 focus:ring-4 focus:ring-green-500/20"
@@ -203,14 +264,22 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                 </div>
                 
                 {[1, 2, 3, 4].map(num => {
-                  const tag = (activeFacility.draft as any)?.[`bullet${num}Tag`];
                   return (
                     <div key={num} className="relative group">
-                       <label className="block mb-2 flex items-center gap-3">
-                         <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-800 font-bold shrink-0" style={{ fontSize: '11px' }}>{num}</div>
-                         <span className="text-sm font-black text-green-700 uppercase tracking-tight">
-                           {tag || `Bullet ${num}`}
-                         </span>
+                       <label className="block mb-2 flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                           <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-800 font-bold shrink-0" style={{ fontSize: '11px' }}>{num}</div>
+                           <select 
+                            value={(editForm as any)[`bullet${num}Tag`]}
+                            onChange={(e) => setEditForm({...editForm, [`bullet${num}Tag`]: e.target.value})}
+                            className="text-sm font-black text-green-700 uppercase tracking-tight bg-transparent border-none p-0 focus:ring-0 cursor-pointer hover:text-green-800"
+                           >
+                             <option value="">Select Category...</option>
+                             {BULLET_CATEGORIES.map(cat => (
+                               <option key={cat} value={cat}>{cat}</option>
+                             ))}
+                           </select>
+                         </div>
                        </label>
                        <textarea 
                          value={(editForm as any)[`bullet${num}`]}
@@ -220,6 +289,25 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                     </div>
                   );
                 })}
+
+                {/* Production HTML Preview */}
+                <div className="mt-12 pt-12 border-t border-gray-100">
+                   <div className="flex justify-between items-center mb-4">
+                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Production HTML Output</label>
+                     <button 
+                      onClick={copyToClipboard}
+                      className="text-xs font-bold text-green-700 hover:text-green-800 flex items-center gap-2"
+                     >
+                       {copySuccess ? <CheckCircle2 size={14} /> : <Clipboard size={14} />}
+                       {copySuccess ? 'Copied!' : 'Copy Code'}
+                     </button>
+                   </div>
+                   <textarea 
+                     readOnly
+                     value={generateHTML()}
+                     className="w-full p-4 bg-gray-900 text-green-400 font-mono text-xs rounded-xl h-48 border border-gray-800 focus:outline-none"
+                   />
+                </div>
               </div>
             </div>
 
@@ -229,66 +317,99 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                
                {geo ? (
                  <div className="space-y-4">
-                   <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                     <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-blue-100 p-2 rounded-lg text-blue-700"><Car size={18} /></div>
-                        <h4 className="font-bold text-gray-900">Transportation</h4>
-                     </div>
-                     <div className="grid grid-cols-2 gap-4">
-                       <div>
-                         <span className="text-xs text-gray-500 font-medium">Nearest Interstate</span>
-                         <p className="font-bold text-sm text-gray-800">{geo['nearest_interstate'] || 'N/A'}</p>
-                       </div>
-                       <div>
-                         <span className="text-xs text-gray-500 font-medium">Distance</span>
-                         <p className="font-bold text-sm text-gray-800">{Number(geo['interstate_distance_mi'] || 0).toFixed(2)} mi</p>
-                       </div>
-                       <div className="col-span-2 pt-2 border-t border-gray-100">
-                         <span className="text-xs text-gray-500 font-medium">Nearest Airport</span>
-                         <p className="font-bold text-sm text-gray-800">{geo['nearest_airport'] || 'N/A'} <span className="text-gray-400 font-normal">({Number(geo['airport_distance_mi'] || 0).toFixed(2)} mi)</span></p>
-                       </div>
-                     </div>
-                   </div>
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3 mb-4">
+                         <div className="bg-blue-100 p-2 rounded-lg text-blue-700"><Car size={18} /></div>
+                         <h4 className="font-bold text-gray-900">Transportation & Access</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Interstate</span>
+                          <p className="font-bold text-sm text-gray-800 truncate">{geo['nearest_interstate'] || 'N/A'}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase">{Number(geo['interstate_distance_mi'] || 0).toFixed(2)} mi</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Airport</span>
+                          <p className="font-bold text-sm text-gray-800 truncate">{geo['nearest_airport'] || 'N/A'}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase">{Number(geo['airport_distance_mi'] || 0).toFixed(2)} mi</p>
+                        </div>
+                        {geo['nearest_major_intersection'] && (
+                          <div className="col-span-2 pt-2 border-t border-gray-100">
+                            <span className="text-xs text-gray-500 font-medium flex items-center gap-1"><Crosshair size={10} /> Nearest Major Intersection</span>
+                            <p className="font-bold text-sm text-gray-800 mt-1">{geo['nearest_major_intersection']}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                   <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                     <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-purple-100 p-2 rounded-lg text-purple-700"><Landmark size={18} /></div>
-                        <h4 className="font-bold text-gray-900">Demographics & Insights</h4>
-                     </div>
-                     <div className="space-y-4">
-                       <div>
-                         <span className="text-xs text-gray-500 font-medium block mb-1">Target Persona</span>
-                         <div className="inline-block px-3 py-1 bg-purple-50 text-purple-800 rounded-md font-bold text-sm border border-purple-100">
-                            {demo?.persona || geo['Demographic Persona'] || 'General'}
-                         </div>
-                       </div>
-                       <div>
-                         <span className="text-xs text-gray-500 font-medium">Content Hook</span>
-                         <p className="font-semibold text-sm text-gray-800 mt-1">{geo['Content Hook (Bullet 2)'] || 'N/A'}</p>
-                       </div>
-                       <div>
-                         <span className="text-xs text-gray-500 font-medium block">County</span>
-                         <p className="font-bold text-sm text-gray-800">{geo['county_name'] || 'N/A'}</p>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                     <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-orange-100 p-2 rounded-lg text-orange-700"><Map size={18} /></div>
-                        <h4 className="font-bold text-gray-900">Local Anchors</h4>
-                     </div>
-                     <div className="space-y-3">
-                       <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                         <span className="text-sm font-medium text-gray-600">University</span>
-                         <span className="text-sm font-bold text-gray-900">{geo['nearest_university'] || 'None'}</span>
-                       </div>
-                       <div className="flex justify-between items-center">
-                         <span className="text-sm font-medium text-gray-600">Military Base</span>
-                         <span className="text-sm font-bold text-gray-900">{geo['nearest_military_base'] || 'None'}</span>
-                       </div>
-                     </div>
-                   </div>
+                    {geo['Second City Draw'] && (
+                      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
+                        <div className="flex items-center gap-3 mb-2">
+                           <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><Map size={18} /></div>
+                           <h4 className="font-bold text-gray-900 text-sm">Regional Market Draw</h4>
+                        </div>
+                        <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                          Confirmed traffic draw from <span className="text-blue-700 font-bold">{geo['Second City Draw']}</span>. 
+                          Writers should acknowledge this community in the intro or bullets.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3 mb-4">
+                         <div className="bg-purple-100 p-2 rounded-lg text-purple-700"><Landmark size={18} /></div>
+                         <h4 className="font-bold text-gray-900">Demographics & Insights</h4>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-xs text-gray-500 font-medium block mb-1">Target Persona</span>
+                            <div className="inline-block px-3 py-1 bg-purple-50 text-purple-800 rounded-md font-bold text-xs border border-purple-100">
+                               {demo?.persona || geo['Demographic Persona'] || 'General'}
+                            </div>
+                          </div>
+                          {(geo['Home Share'] > 0.1) && (
+                            <div className="text-right">
+                              <span className="text-xs text-gray-500 font-medium block mb-1">Customer Mix</span>
+                              <div className="inline-block px-3 py-1 bg-green-50 text-green-800 rounded-md font-bold text-xs border border-green-100">
+                                 {geo['Home Zip']} ({Math.round(geo['Home Share'] * 100)}%)
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 font-medium">Strategic Hook</span>
+                          <p className="font-semibold text-[13px] text-gray-700 mt-1 leading-relaxed italic">"{geo['Content Hook (Bullet 2)'] || geo['Demographic Content Hook'] || 'N/A'}"</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3 mb-4">
+                         <div className="bg-orange-100 p-2 rounded-lg text-orange-700"><MapPin size={18} /></div>
+                         <h4 className="font-bold text-gray-900">POI Proximity Audit</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {[
+                          { label: 'University', value: geo['nearest_university_verified'] || geo['nearest_university'], dist: geo['university_distance_mi'] },
+                          { label: 'Military Base', value: geo['nearest_military_base'], dist: geo['military_base_distance_mi'] },
+                          { label: 'High School', value: geo['nearest_school_verified'] },
+                          { label: 'Reg. Park', value: geo['nearest_park_verified'] },
+                          { label: 'Hospital', value: geo['nearest_hospital_verified'] },
+                          { label: 'Stadium', value: geo['nearest_stadium_verified'] },
+                        ].filter(item => item.value && item.value !== 'None').map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                            <div>
+                              <span className="text-[10px] uppercase text-gray-400 font-black block">{item.label}</span>
+                              <span className="text-sm font-bold text-gray-800">{item.value}</span>
+                            </div>
+                            {item.dist && (
+                              <span className="text-[10px] font-bold text-gray-500">{Number(item.dist).toFixed(1)} mi</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                  </div>
                ) : (
                  <div className="text-sm text-gray-500 text-center mt-10">Context Data Unavailable</div>
