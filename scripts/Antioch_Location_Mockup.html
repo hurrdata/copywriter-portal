@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Our Antioch Location — Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+    gap: 24px;
+  }
+
+  .page-wrap {
+    background: #fff;
+    max-width: 1100px;
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+  }
+
+  .about-section {
+    background: #f6f6f6;
+    padding: 48px 52px;
+  }
+
+  .about-inner {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+  }
+
+  .about-content {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .about-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    letter-spacing: -0.4px;
+  }
+
+  .about-intro {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 540px;
+  }
+
+  .bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .bullet-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .bullet-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    margin-top: 1px;
+  }
+
+  .bullet-text {
+    font-size: 15px;
+    color: #2a2a2a;
+    line-height: 1.6;
+    padding-top: 4px;
+  }
+
+  /* Map panel */
+  .about-map {
+    flex: 0 0 320px;
+    width: 320px;
+  }
+
+  .map-image {
+    background: #d8d8d8;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-image-label {
+    color: #aaa;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .map-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .location-card {
+    background: #fff;
+    border-radius: 0 0 4px 4px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .location-pin-wrap {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+  }
+
+  .location-card-text { display: flex; flex-direction: column; }
+  .location-card-label {
+    font-size: 10px; font-weight: 800; color: #1a1a1a;
+    letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .location-card-address { font-size: 13px; color: #555; margin-top: 2px; }
+
+  /* Annotation bar */
+  .annotation-bar {
+    background: #1a1a2e;
+    padding: 14px 52px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+  }
+  .annotation-bar-title {
+    font-size: 11px; font-weight: 700; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-right: 4px;
+  }
+  .ann-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; padding: 3px 10px 3px 8px;
+    border-radius: 20px; font-weight: 600;
+  }
+  .ann-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ann-core   { background: rgba(255,255,255,0.08); color: #e5e7eb; }
+  .ann-core   .ann-dot { background: #fff; }
+  .ann-second { background: rgba(99,102,241,0.25); color: #c7d2fe; }
+  .ann-second .ann-dot { background: #c7d2fe; }
+  .ann-geo    { background: rgba(37,99,235,0.25);  color: #93c5fd; }
+  .ann-geo    .ann-dot { background: #93c5fd; }
+  .ann-nbhd   { background: rgba(16,185,129,0.20); color: #6ee7b7; }
+  .ann-nbhd   .ann-dot { background: #6ee7b7; }
+  .ann-fix    { background: rgba(239,68,68,0.18);  color: #fca5a5; }
+  .ann-fix    .ann-dot { background: #fca5a5; }
+
+  /* Side-by-side comparison note */
+  .change-note {
+    max-width: 1100px;
+    width: 100%;
+    background: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .change-note-header {
+    background: #1a1a2e;
+    padding: 12px 24px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .change-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .change-col {
+    padding: 20px 24px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #374151;
+    border-right: 1px solid #e5e7eb;
+  }
+  .change-col:last-child { border-right: none; }
+  .change-col-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .col-old .change-col-title { color: #ef4444; }
+  .col-new .change-col-title { color: #10b981; }
+  .change-item { margin-bottom: 10px; padding-left: 12px; border-left: 3px solid; }
+  .col-old .change-item { border-color: #fecaca; color: #6b7280; }
+  .col-new .change-item { border-color: #6ee7b7; color: #1a1a1a; }
+  .change-flag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-bottom: 3px;
+    letter-spacing: 0.3px;
+  }
+  .col-old .change-flag { background: #fee2e2; color: #991b1b; }
+  .col-new .change-flag { background: #d1fae5; color: #065f46; }
+
+  @media (max-width: 720px) {
+    .about-inner { flex-direction: column; }
+    .about-map { width: 100%; flex: none; }
+    .about-section { padding: 32px 24px; }
+    .change-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Main Mockup ── -->
+<div class="page-wrap">
+  <div class="about-section">
+    <div class="about-inner">
+
+      <!-- LEFT: content -->
+      <div class="about-content">
+        <h2 class="about-title">About Our Antioch, TN Location</h2>
+
+        <p class="about-intro">
+          Located just south of Nashville and conveniently located near the intersection of Antioch Pike and Haywood Ln (less than a mile west of J.E. Moss Elementary School via Richards Rd), our Antioch Pike location is perfectly located with easy interstate access to serve residents of Antioch and Nashville.
+        </p>
+
+        <ul class="bullet-list">
+
+          <!-- Bullet 1 — C-01 Home Community -->
+          <li class="bullet-item">
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4C11.03 4 7 8.03 7 13c0 7 9 16 9 16s9-9 9-16c0-4.97-4.03-9-9-9z" fill="#3D9E30"/>
+              <circle cx="16" cy="13" r="3" fill="#fff"/>
+            </svg>
+            <span class="bullet-text">
+              Conveniently located for Antioch (37013) residents
+            </span>
+          </li>
+
+          <!-- Bullet 2 — C-03 Second City Draw -->
+          <li class="bullet-item">
+            <!-- Two-city arrow icon -->
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- City A pin (left) -->
+              <path d="M9 4C6.24 4 4 6.24 4 9c0 4.5 5 9.5 5 9.5s5-5 5-9.5C14 6.24 11.76 4 9 4z" fill="#3D9E30" opacity="0.5"/>
+              <circle cx="9" cy="9" r="2" fill="#3D9E30"/>
+              <!-- Arrow -->
+              <path d="M15 16 L21 16" stroke="#3D9E30" stroke-width="2" stroke-linecap="round"/>
+              <path d="M19 13.5 L22 16 L19 18.5" stroke="#3D9E30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- City B pin (right) -->
+              <path d="M24 10C21.24 10 19 12.24 19 15c0 4.5 5 9.5 5 9.5s5-5 5-9.5C29 12.24 26.76 10 24 10z" fill="#3D9E30"/>
+              <circle cx="24" cy="15" r="2" fill="#fff"/>
+            </svg>
+            <span class="bullet-text">
+              A convenient option for Nashville residents in the Nolensville Pike/Berry Hill corridor (37211) looking for an affordable self storage option.
+            </span>
+          </li>
+
+          <!-- Bullet 3 — G-01 Interstate -->
+          <li class="bullet-item">
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Interstate shield -->
+              <path d="M6 8C6 6.34 7.34 5 9 5h14c1.66 0 3 1.34 3 3v10c0 5-7 11-7 11s-7-6-7-11V8z" fill="#3D9E30"/>
+              <text x="16" y="19" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="900" fill="#fff">24</text>
+              <text x="16" y="11" text-anchor="middle" font-family="Arial,sans-serif" font-size="5" font-weight="700" fill="#fff">I</text>
+            </svg>
+            <span class="bullet-text">
+              Just 0.2 miles from I-24, Exit 57 (Haywood Lane) — easy on, easy off
+              for every storage run
+            </span>
+          </li>
+
+          <!-- Bullet 4 — C-02 Nearby Neighborhoods -->
+          <li class="bullet-item">
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Row of small houses -->
+              <!-- House 1 (left) -->
+              <path d="M4 14 L9 9 L14 14" stroke="#3D9E30" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+              <rect x="5.5" y="14" width="7" height="7" rx="0.5" fill="#3D9E30" opacity="0.3" stroke="#3D9E30" stroke-width="1.5"/>
+              <rect x="7.5" y="17" width="2" height="4" rx="0.3" fill="#3D9E30"/>
+              <!-- House 2 (center, slightly larger/taller) -->
+              <path d="M11 13 L16 7 L21 13" stroke="#3D9E30" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
+              <rect x="12.5" y="13" width="7" height="8" rx="0.5" fill="#3D9E30" opacity="0.4" stroke="#3D9E30" stroke-width="1.8"/>
+              <rect x="14.5" y="16.5" width="2.5" height="4.5" rx="0.3" fill="#3D9E30"/>
+              <!-- House 3 (right) -->
+              <path d="M19 14 L24 9 L29 14" stroke="#3D9E30" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+              <rect x="20.5" y="14" width="7" height="7" rx="0.5" fill="#3D9E30" opacity="0.3" stroke="#3D9E30" stroke-width="1.5"/>
+              <rect x="22.5" y="17" width="2" height="4" rx="0.3" fill="#3D9E30"/>
+            </svg>
+            <span class="bullet-text">
+              Minutes from established Antioch neighborhoods including Antioch Park,
+              Oakwood Terrace, Barclay Square, and Bakertown
+            </span>
+          </li>
+
+        </ul>
+      </div>
+
+      <!-- RIGHT: map -->
+      <div class="about-map">
+        <div class="map-image">
+          <span class="map-image-label">300 × 300</span>
+        </div>
+        <div class="location-card">
+          <div class="location-pin-wrap">
+            <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 3C9.03 3 5 7.03 5 12c0 6.5 9 15 9 15s9-8.5 9-15c0-4.97-4.03-9-9-9z" fill="#3D9E30"/>
+              <circle cx="14" cy="11" r="2.5" fill="#fff"/>
+            </svg>
+          </div>
+          <div class="location-card-text">
+            <span class="location-card-label">Our Location</span>
+            <span class="location-card-address">Antioch, TN · 2101 Antioch Pike</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Annotation bar -->
+  <div class="annotation-bar">
+    <span class="annotation-bar-title">Bullet mapping</span>
+    <span class="ann-chip ann-core"><span class="ann-dot"></span>C-01 Home Community</span>
+    <span class="ann-chip ann-second"><span class="ann-dot"></span>C-03 Second City Draw (Nashville 13.3%)</span>
+    <span class="ann-chip ann-geo"><span class="ann-dot"></span>G-01 I-24 Exit 57 · 0.2 mi</span>
+    <span class="ann-chip ann-nbhd"><span class="ann-dot"></span>C-02 Confirmed Neighborhoods</span>
+  </div>
+</div>
+
+<!-- ── Change Log ── -->
+<div class="change-note">
+  <div class="change-note-header">What changed from mockup → final</div>
+  <div class="change-grid">
+
+    <div class="change-col col-old">
+      <div class="change-col-title">Draft (issues flagged)</div>
+
+      <div class="change-item">
+        <div class="change-flag">INCOMPLETE</div><br>
+        "Conveniently located near the intersection of Antioch Pike and Richards Rd," — sentence cuts off, no closing thought
+      </div>
+
+      <div class="change-item">
+        <div class="change-flag">UNVERIFIED DATA</div><br>
+        Apache Hills, Luna Heights, Hickory Highlands — not in OSM data for this location
+      </div>
+
+      <div class="change-item">
+        <div class="change-flag">MISSING SPECIFICITY</div><br>
+        "via the Haywood Ln exit" — no distance, no exit number
+      </div>
+
+      <div class="change-item">
+        <div class="change-flag">GENERIC</div><br>
+        Opening paragraph is absent — copy jumps straight to bullets
+      </div>
+    </div>
+
+    <div class="change-col col-new">
+      <div class="change-col-title">Final Copy</div>
+
+      <div class="change-item">
+        <div class="change-flag">APPROVED</div><br>
+        Intro paragraph now includes J.E. Moss Elementary reference and full intersection description
+      </div>
+
+      <div class="change-item">
+        <div class="change-flag">APPROVED</div><br>
+        Second city draw bullet now names the Nolensville Pike/Berry Hill corridor (37211) specifically
+      </div>
+
+      <div class="change-item">
+        <div class="change-flag">APPROVED</div><br>
+        I-24 exit distance and exit number confirmed: 0.2 miles, Exit 57 (Haywood Lane)
+      </div>
+
+      <div class="change-item">
+        <div class="change-flag">APPROVED</div><br>
+        Neighborhood names confirmed from location data: Antioch Park, Oakwood Terrace, Barclay Square, Bakertown
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

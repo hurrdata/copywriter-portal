@@ -1,0 +1,7 @@
+google-genai
+pandas
+psycopg2-binary
+python-dotenv
+beautifulsoup4
+backoff
+openpyxl

@@ -20,17 +20,26 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Extra Space Truth Engine (Scripts)
+
+This project includes a suite of Python scripts used to generate and sync AI copy directly to the database.
+
+### Setup
+1. Create a virtual environment: `python -m venv venv`
+2. Activate it: `source venv/bin/activate` (Mac/Linux) or `venv\Scripts\activate` (Windows)
+3. Install dependencies: `pip install -r scripts/requirements.txt`
+4. Set up your `.env` file based on `.env.example`.
+
+### Core Scripts
+- **`scripts/generate_copy_batch.py`**: The main generation engine. It uses Gemini 2.0/2.5 to draft copy based on Segment Strategy and local POI data.
+- **`scripts/sync_zip_customer_mix.py`**: Syncs granular ZIP customer data from Excel into the database.
+
+### Running Generation
+To refresh a batch of store copy:
+```bash
+python scripts/generate_copy_batch.py
+```
+*Note: Ensure your `output_final.xlsx` and expansion files are in the repository root (ignored by git).*
+
 ## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+... (existing learn more content)

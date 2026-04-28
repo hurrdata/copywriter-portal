@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Our Santa Cruz Location — Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  /* Outer page chrome to simulate website context */
+  .page-wrap {
+    background: #fff;
+    max-width: 1100px;
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+  }
+
+  /* Section container */
+  .about-section {
+    background: #f6f6f6;
+    padding: 48px 52px;
+  }
+
+  /* Two-column layout */
+  .about-inner {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+  }
+
+  /* LEFT: content */
+  .about-content {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .about-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    letter-spacing: -0.4px;
+  }
+
+  .about-intro {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 540px;
+  }
+
+  /* Bullet list */
+  .bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .bullet-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .bullet-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    margin-top: 1px;
+  }
+
+  .bullet-text {
+    font-size: 15px;
+    color: #2a2a2a;
+    line-height: 1.6;
+    padding-top: 4px;
+  }
+
+  /* RIGHT: map card */
+  .about-map {
+    flex: 0 0 320px;
+    width: 320px;
+  }
+
+  .map-image {
+    background: #d8d8d8;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-image-label {
+    color: #aaa;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  /* Map grid lines for realism */
+  .map-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Location card overlay */
+  .location-card {
+    background: #fff;
+    border-radius: 0 0 4px 4px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .location-pin-wrap {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+  }
+
+  .location-card-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .location-card-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  .location-card-address {
+    font-size: 13px;
+    color: #555;
+    margin-top: 2px;
+  }
+
+  /* Annotation layer (editor notes) */
+  .annotation-bar {
+    background: #1a1a2e;
+    padding: 14px 52px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .annotation-bar-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-right: 4px;
+  }
+
+  .ann-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    padding: 3px 10px 3px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+  }
+  .ann-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .ann-core     { background: rgba(255,255,255,0.08); color: #e5e7eb; }
+  .ann-geo      { background: rgba(37,99,235,0.25);   color: #93c5fd; }
+  .ann-anchor   { background: rgba(124,58,237,0.25);  color: #c4b5fd; }
+  .ann-urban    { background: rgba(217,119,6,0.25);   color: #fcd34d; }
+  .ann-fix      { background: rgba(239,68,68,0.18);   color: #fca5a5; }
+
+  .ann-core   .ann-dot  { background: #fff; }
+  .ann-geo    .ann-dot  { background: #93c5fd; }
+  .ann-anchor .ann-dot  { background: #c4b5fd; }
+  .ann-urban  .ann-dot  { background: #fcd34d; }
+  .ann-fix    .ann-dot  { background: #fca5a5; }
+
+  @media (max-width: 720px) {
+    .about-inner { flex-direction: column; }
+    .about-map { width: 100%; flex: none; }
+    .about-section { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- ── About Section ── -->
+  <div class="about-section">
+    <div class="about-inner">
+
+      <!-- LEFT: text content -->
+      <div class="about-content">
+
+        <h2 class="about-title">About Our Santa Cruz, CA Location</h2>
+
+        <p class="about-intro">
+          Conveniently located near the intersection of Mission St and Fair Ave at 1310 Fair Ave, we serve the unique needs of Santa Cruz residents. Whether you're a Westside resident looking for more space or a UCSC student between semesters, we offer the convenience and flexibility you need.
+        </p>
+
+        <ul class="bullet-list">
+
+          <!-- Bullet 1 — C-01/C-02 Neighborhood -->
+          <li class="bullet-item">
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="13" r="5" fill="#3D9E30"/>
+              <path d="M16 4C11.03 4 7 8.03 7 13c0 7 9 16 9 16s9-9 9-16c0-4.97-4.03-9-9-9z" fill="#3D9E30"/>
+              <circle cx="16" cy="13" r="3" fill="#fff"/>
+            </svg>
+            <span class="bullet-text">
+              Located in the heart of Westside in Santa Cruz (95060)
+            </span>
+          </li>
+
+          <!-- Bullet 2 — G-01 Highway Access -->
+          <li class="bullet-item">
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Road/highway icon -->
+              <rect x="13" y="3" width="6" height="26" rx="1" fill="#3D9E30" opacity="0.25"/>
+              <rect x="14.5" y="3" width="3" height="26" rx="1" fill="#3D9E30"/>
+              <rect x="4" y="13" width="24" height="6" rx="1" fill="#3D9E30" opacity="0.25"/>
+              <rect x="4" y="14.5" width="24" height="3" rx="1" fill="#3D9E30"/>
+              <!-- Exit arrow -->
+              <path d="M20 10 L26 10 L26 16" stroke="#3D9E30" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <span class="bullet-text">
+              Easy access from Mission St (Hwy 1) makes this an ideal location for renters, students, and residents in Westside, Downtown, and even Seabright.
+            </span>
+          </li>
+
+          <!-- Bullet 3 — A-01 University -->
+          <li class="bullet-item">
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Graduation cap -->
+              <path d="M16 7L4 13l12 6 12-6-12-6z" fill="#3D9E30"/>
+              <path d="M10 15.5v6c0 0 2 2.5 6 2.5s6-2.5 6-2.5v-6" stroke="#3D9E30" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <line x1="28" y1="13" x2="28" y2="20" stroke="#3D9E30" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="28" cy="21" r="1.5" fill="#3D9E30"/>
+            </svg>
+            <span class="bullet-text">
+              Less than 1 mile from UC Santa Cruz to the south, this facility offers great options for students including smaller, affordable units like 5×5 and 5×10.
+            </span>
+          </li>
+
+          <!-- Bullet 4 — U-01 Urban Residential -->
+          <li class="bullet-item">
+            <svg class="bullet-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Apartment building -->
+              <rect x="8" y="6" width="16" height="22" rx="1" fill="#3D9E30" opacity="0.2"/>
+              <rect x="8" y="6" width="16" height="22" rx="1" stroke="#3D9E30" stroke-width="2"/>
+              <!-- Windows -->
+              <rect x="11" y="10" width="3" height="3" rx="0.5" fill="#3D9E30"/>
+              <rect x="18" y="10" width="3" height="3" rx="0.5" fill="#3D9E30"/>
+              <rect x="11" y="16" width="3" height="3" rx="0.5" fill="#3D9E30"/>
+              <rect x="18" y="16" width="3" height="3" rx="0.5" fill="#3D9E30"/>
+              <!-- Door -->
+              <rect x="13.5" y="22" width="5" height="6" rx="0.5" fill="#3D9E30"/>
+            </svg>
+            <span class="bullet-text">
+              Just minutes from residential areas like The Circles and apartments like Pacific Shores and The Hilltop.
+            </span>
+          </li>
+
+        </ul>
+      </div><!-- /about-content -->
+
+      <!-- RIGHT: map -->
+      <div class="about-map">
+        <div class="map-image">
+          <span class="map-image-label">300 × 300</span>
+        </div>
+        <div class="location-card">
+          <div class="location-pin-wrap">
+            <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="14" cy="11" r="4.5" fill="#3D9E30"/>
+              <path d="M14 3C9.03 3 5 7.03 5 12c0 6.5 9 15 9 15s9-8.5 9-15c0-4.97-4.03-9-9-9z" fill="#3D9E30"/>
+              <circle cx="14" cy="11" r="2.5" fill="#fff"/>
+            </svg>
+          </div>
+          <div class="location-card-text">
+            <span class="location-card-label">Our Location</span>
+            <span class="location-card-address">Westside, Santa Cruz, CA</span>
+          </div>
+        </div>
+      </div><!-- /about-map -->
+
+    </div><!-- /about-inner -->
+  </div><!-- /about-section -->
+
+  <!-- ── Annotation bar ── -->
+  <div class="annotation-bar">
+    <span class="annotation-bar-title">Bullet mapping</span>
+    <span class="ann-chip ann-core"><span class="ann-dot"></span>C-01/C-02 Neighborhood</span>
+    <span class="ann-chip ann-geo"><span class="ann-dot"></span>G-01 Highway Access</span>
+    <span class="ann-chip ann-anchor"><span class="ann-dot"></span>A-01 University</span>
+    <span class="ann-chip ann-urban"><span class="ann-dot"></span>U-01 Urban Residential</span>
+    <span class="ann-chip ann-fix"><span class="ann-dot"></span>Updated: new intro · Seabright included · residential names updated</span>
+  </div>
+
+</div><!-- /page-wrap -->
+
+</body>
+</html>

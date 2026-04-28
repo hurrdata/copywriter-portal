@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXR Content Bullet Library v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d3047 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .intro-section {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .intro-section h2 {
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .intro-section p {
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        .key-concept {
+            background: #f0f7f4;
+            border-left: 4px solid #3D9E30;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .key-concept strong {
+            color: #3D9E30;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        section h2 {
+            color: #1a1a2e;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #3D9E30;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-top: 4px solid #3D9E30;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .card-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-category {
+            display: inline-block;
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-description {
+            color: #555;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .card-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .example-copy {
+            background: #e6f0ff;
+            border-left: 3px solid #0066cc;
+            padding: 1rem;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #333;
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .icon-guidance {
+            background: #f5f5f5;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .location-types-section {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .location-types-section h3 {
+            color: #1a1a2e;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .location-type {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .location-type:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .location-type-name {
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .location-type-description {
+            color: #555;
+            margin-bottom: 0.75rem;
+        }
+
+        .priority-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .priority-item {
+            background: #f0f7f4;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #1a1a2e;
+            border: 1px solid #3D9E30;
+        }
+
+        .priority-arrow {
+            color: #3D9E30;
+            font-weight: bold;
+            margin: 0 0.25rem;
+        }
+
+        .selection-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+
+        .selection-table th {
+            background: #1a1a2e;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .selection-table td {
+            padding: 1.25rem 1rem;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.95rem;
+        }
+
+        .selection-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .principles-section {
+            background: linear-gradient(135deg, #f0f7f4 0%, #e8f4f0 100%);
+            border-radius: 8px;
+            padding: 2.5rem;
+            margin-top: 3rem;
+            border: 2px solid #3D9E30;
+        }
+
+        .principles-section h2 {
+            color: #1a1a2e;
+            margin-bottom: 1.5rem;
+            border-bottom: 3px solid #3D9E30;
+            padding-bottom: 0.5rem;
+        }
+
+        .principle {
+            margin-bottom: 1.5rem;
+        }
+
+        .principle:last-child {
+            margin-bottom: 0;
+        }
+
+        .principle-title {
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        .principle-text {
+            color: #555;
+            line-height: 1.7;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #888;
+            font-size: 0.9rem;
+            border-top: 1px solid #e0e0e0;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .selection-table {
+                font-size: 0.85rem;
+            }
+
+            .selection-table td,
+            .selection-table th {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>EXR Content Bullet Library</h1>
+        <p>Strategic content framework for Extra Space Storage location pages — designed for brand consistency and data-informed storytelling</p>
+    </header>
+
+    <div class="container">
+        <!-- OVERVIEW SECTION -->
+        <section class="intro-section">
+            <h2>Overview</h2>
+            <p>Every Extra Space Storage location page features an "About Our Location" section with exactly 4 content bullets. Each bullet is selected from a curated library of 12 distinct types, organized across 5 categories. This ensures that every location's story is grounded in what's actually true about its surroundings and who shops there — not templated copy.</p>
+
+            <div class="key-concept">
+                <strong>Core Principle:</strong> The 4 bullets are selected based on confirmed location data and customer draw patterns unique to each facility. This transforms generic "convenient location" claims into specific, verifiable assertions that resonate with readers searching for storage solutions.
+            </div>
+
+            <p>The framework accommodates four distinct location types, each with different audience priorities and selection logic. Whether customers are drawn by neighborhood familiarity, mixed-draw patterns, metro-wide accessibility, or a major anchor, the bullet library adapts to tell the right story.</p>
+        </section>
+
+        <!-- LOCATION TYPES -->
+        <section class="location-types-section">
+            <h2>Location Types & Audiences</h2>
+            <p>Understanding the location type shapes which bullets matter most. Here's how to categorize any Extra Space Storage facility:</p>
+
+            <div class="location-type">
+                <div class="location-type-name">Neighborhood Locations</div>
+                <div class="location-type-description">Customers are overwhelmingly local. The store's appeal is rooted in being the convenient choice for people in the immediate area. Hyperlocal specificity matters most — readers want to know if their neighborhood, subdivision, or school zone is represented.</div>
+            </div>
+
+            <div class="location-type">
+                <div class="location-type-name">Mixed-Draw Locations</div>
+                <div class="location-type-description">A strong local base, but meaningful traffic from adjacent communities or a specific nearby anchor (university, military base, etc.). These locations benefit from both hyperlocal grounding and acknowledgment of the secondary draw source.</div>
+            </div>
+
+            <div class="location-type">
+                <div class="location-type-name">Metro/Wide-Draw Locations</div>
+                <div class="location-type-description">Customers come from a broad geography, often pulled by a major anchor — airport, stadium, medical center, or urban business district. Geographic orientation and access become more important than neighborhood callouts; readers are less likely to recognize subdivision names.</div>
+            </div>
+
+            <div class="location-type">
+                <div class="location-type-name">Anchor-Driven Locations</div>
+                <div class="location-type-description">The store's draw pattern is explained primarily by proximity to one dominant attractor. The anchor leads the story; community context takes a secondary role. Strong for locations where a military base, major university, or airport is the primary driver of demand.</div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 1: CORE LOCATION IDENTITY -->
+        <section>
+            <h2>Category 1: Core Location Identity</h2>
+            <p>These bullets establish geographic context and the store's relationship to its community. Every location needs at least one from this group; many will feature two or three.</p>
+
+            <div class="card-grid">
+                <!-- C-01 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C9.24 2 7 4.24 7 7c0 2.85 2.92 7.21 5 9.88 2.11-2.69 5-7.05 5-9.88 0-2.76-2.24-5-5-5zm0 7.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#3D9E30"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Home Community</div>
+                            <div class="card-category">Core Identity</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Anchors the page to the store's primary service area. Sets geographic context and tells readers exactly where this location is and who it serves. Always present in the 4-bullet set.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Located in the heart of Downtown Seattle, our storage facility serves the core urban community with convenient climate-controlled units just minutes from Pike Place Market and the business district."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Simple location pin or crosshair marker in brand green. Must be immediately recognizable as a geographic indicator.</div>
+                </div>
+
+                <!-- C-02 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="#3D9E30"/>
+                                <rect x="3" y="3" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                                <rect x="9" y="3" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                                <rect x="15" y="3" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                                <rect x="3" y="9" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                                <rect x="15" y="9" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                                <rect x="3" y="15" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                                <rect x="9" y="15" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                                <rect x="15" y="15" width="4" height="4" fill="#3D9E30" opacity="0.7"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Nearby Neighborhoods</div>
+                            <div class="card-category">Core Identity</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Names specific neighborhoods, subdivisions, and residential communities near the store. Highest value for neighborhood locations — readers in those areas instantly recognize the names and feel the location is made for them.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Serving the Heights, Craftsman Hills, and Riverside neighborhoods, our storage facility has been the trusted choice for families and professionals throughout the North Shore community for over a decade."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Row of stylized residential buildings or houses. Emphasizes residential community. Avoid generic grid patterns — aim for a warm, neighborhood-focused visual.</div>
+                </div>
+
+                <!-- C-03 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" fill="#3D9E30" opacity="0.5"/>
+                                <path d="M9 13.5l-3-3 1.41-1.41L9 10.67l5.59-5.59L16 6.5 9 13.5z" fill="#3D9E30"/>
+                                <path d="M16 9l-5 5h7" stroke="#3D9E30" stroke-width="1.5" fill="none"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Second City Draw</div>
+                            <div class="card-category">Core Identity</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Signals when a meaningful share of customers come from a different municipality than the store's home city. Tells readers in that second city: "this location serves you too." Critical for wide-draw and anchor-driven locations where cross-border traffic is significant.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"While based in Springdale, our location is equally convenient for residents of neighboring Millbrook, just 2 miles away. Many of our customers are from both communities."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Two location pins or markers connected by an arrow or bridge. Visually communicates cross-community connectivity without suggesting travel distance.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 2: GEOGRAPHIC ACCESS -->
+        <section>
+            <h2>Category 2: Geographic Access</h2>
+            <p>Transform vague "convenient location" claims into specific, verifiable statements about highway access and transportation proximity.</p>
+
+            <div class="card-grid">
+                <!-- G-01 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="3" y="4" width="18" height="10" fill="none" stroke="#3D9E30" stroke-width="1.5"/>
+                                <path d="M5 7h14M5 10h14M5 13h14" stroke="#3D9E30" stroke-width="1" opacity="0.6"/>
+                                <path d="M6 14v4M18 14v4" stroke="#3D9E30" stroke-width="1.5"/>
+                                <text x="12" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#3D9E30">I-80</text>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Interstate/Highway Exit</div>
+                            <div class="card-category">Geographic Access</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Confirms distance and exit number for the nearest major interstate or highway. Replaces vague "convenient freeway access" with a measurable, specific claim that helps customers verify they can reach the facility quickly.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Just 1/2 mile from Exit 47 on I-70, our facility offers quick access for anyone commuting through the valley or traveling along the corridor."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Interstate shield or highway marker in brand green. Should feel official and directional. Consider subtle road markings or arrow elements.</div>
+                </div>
+
+                <!-- G-02 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#3D9E30" opacity="0.3"/>
+                                <path d="M7 14h2v2H7z M9 13h2v4H9z M11 12h2v5h-2z M13 13h2v4h-2z M15 14h2v2h-2z" fill="#3D9E30"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Airport Proximity</div>
+                            <div class="card-category">Geographic Access</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Highlights proximity to a commercial airport. Strong appeal for business travelers, airport employees, and airport-corridor businesses. Customers benefit from short drive times before/after flights and temporary storage during travel.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Just 8 minutes from Denver International Airport, we're the preferred storage choice for business travelers, airline employees, and anyone needing secure storage while traveling."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Airplane in departure or takeoff pose, or departure/arrival signage style. Should feel travel-oriented and professional.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 3: COMMUNITY ANCHORS -->
+        <section>
+            <h2>Category 3: Community Anchors</h2>
+            <p>Named institutions and landmarks that create predictable storage demand and help readers understand the area's character and who lives nearby.</p>
+
+            <div class="card-grid">
+                <!-- A-01 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 13.18v4c0 .55.45 1 1 1h1v-4h1v4h1v-4h1v4h1v-4l.82-.82c.4-.4 1.04-.4 1.41 0L12 14l.76-.76c.37-.38.94-.39 1.32-.04L17 17.5c.14.14.35.23.59.23.45 0 .82-.36.82-.82v-4l2-2v-2h-1V6c0-2.76-2.24-5-5-5h-1V0h-2v1h-2V0h-2v1H6C3.24 1 1 3.24 1 6v11h4z" fill="#3D9E30"/>
+                                <path d="M19 14h-4v4h4v-4z" fill="#3D9E30" opacity="0.5"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">University/College Proximity</div>
+                            <div class="card-category">Community Anchors</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Near a four-year university or community college, with confirmed distance and institution name. Speaks directly to student housing needs, semester-break storage, and young professional demand. Signals an educated, dynamic community.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Less than a mile from Ohio State's main campus, our facility is the go-to choice for students needing summer storage solutions and recent graduates building their lives in Columbus."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Graduation cap, academic building, or mortarboard symbol. Should feel educational and aspirational without being cartoonish.</div>
+                </div>
+
+                <!-- A-02 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#3D9E30"/>
+                                <circle cx="12" cy="12" r="2" fill="#3D9E30" opacity="0.4"/>
+                                <path d="M12 8v8M8 12h8" stroke="#3D9E30" stroke-width="0.5" opacity="0.6"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Military Base/Community</div>
+                            <div class="card-category">Community Anchors</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Near an active military installation. Speaks to PCS (Permanent Change of Station) moves, deployment storage, on/off-base living transitions, and veteran-owned business support. A strong signal of stable, family-oriented community demand.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Close to Fort Bragg and serving military families throughout the installation and surrounding areas, we understand the unique storage needs of active duty personnel and PCS moves."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Military star, dog tags, or service insignia. Respectful, dignified, and immediately recognizable. Avoid overly aggressive imagery.</div>
+                </div>
+
+                <!-- A-03 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" fill="#3D9E30" opacity="0.4"/>
+                                <path d="M7 11h10M7 14h10M7 17h6" stroke="#3D9E30" stroke-width="1" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Local Schools</div>
+                            <div class="card-category">Community Anchors</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Near one or more named K–12 schools. Signals a family-embedded, community-rooted location. Copy emphasizes family life logistics — downsizing as kids grow, seasonal items, hobby storage — not academic performance.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Nestled in the heart of the Lincoln school district, near Lincoln Elementary and Lincoln High, our facility serves the families and professionals who call this neighborhood home."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Schoolhouse, pencil, backpack, or apple. Warm and welcoming, emphasizing community rather than academics. Should feel family-friendly.</div>
+                </div>
+
+                <!-- A-04 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#3D9E30"/>
+                                <circle cx="12" cy="12" r="1.5" fill="white"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Notable Nearby Landmark</div>
+                            <div class="card-category">Community Anchors</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">A highly recognizable destination near the store — hospital, professional sports stadium, historic landmark, or major attraction. Used as a geographic orientation anchor to help readers instantly understand the location's place in a familiar landscape.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Just a short drive from Fenway Park and the Museum of Fine Arts, our location is perfectly positioned for arts patrons, sports fans, and professionals working in the Back Bay area."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Gold or accent-colored star or landmark icon. Suggests prestige, visibility, and significance without being branded.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 4: LIFESTYLE & RECREATION -->
+        <section>
+            <h2>Category 4: Lifestyle & Recreation</h2>
+            <p>When the store's amenities support these claims, lifestyle bullets create authentic alignment with nearby recreation and outdoor communities.</p>
+
+            <div class="card-grid">
+                <!-- L-01 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 4C8.13 4 5 7.13 5 11c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#3D9E30" opacity="0.3"/>
+                                <path d="M8 13c0 2.21 1.79 4 4 4s4-1.79 4-4" stroke="#3D9E30" stroke-width="1.5" fill="none"/>
+                                <path d="M12 8l2 3h-1v3h-2v-3h-1l2-3z" fill="#3D9E30"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Marina/Waterfront</div>
+                            <div class="card-category">Lifestyle & Recreation</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Near a marina, boat ramp, or waterfront access. Paired with boat/watercraft storage capability when available. Signals alignment with boating, fishing, water sports communities, and seasonal waterfront enthusiasts.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Minutes from Marina Bay and accessible to the waterfront, our facility is home to local boaters, fishing enthusiasts, and sailors who need secure storage for equipment and seasonal gear."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Sailboat, anchor, or wave motif. Should feel nautical and inviting without being overly decorative. Keep lines clean and recognizable.</div>
+                </div>
+
+                <!-- L-02 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 9h-4V7h-2v2H9l-2 3v3h2v5h2v-5h2v5h2v-5h2l-2-3z" fill="#3D9E30" opacity="0.5"/>
+                                <path d="M12 2l3 2h-6l3-2z M6 10l-3-2v4l3-2z M18 10l3-2v4l-3-2z M9 18h6v2H9z" fill="#3D9E30"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">RV Park/Outdoor Recreation</div>
+                            <div class="card-category">Lifestyle & Recreation</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Near an RV park or campground. Paired with RV/oversized vehicle parking when available. Speaks to outdoor enthusiasts, weekend adventurers, and travelers who need secure storage between trips without the year-round RV lot expense.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Close to the Ponderosa RV Park and surrounded by hiking and camping opportunities, our facility welcomes outdoor enthusiasts who need seasonal storage for RVs, boats, and adventure gear."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">RV silhouette, tent with trees, or campfire icon. Emphasize adventure and outdoor lifestyle. Should feel welcoming and active.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 5: URBAN RESIDENTIAL -->
+        <section>
+            <h2>Category 5: Urban Residential</h2>
+            <p>In dense urban markets where residential subdivisions don't exist, this category names specific multifamily communities, loft buildings, and condo complexes to establish hyperlocal relevance.</p>
+
+            <div class="card-grid">
+                <!-- U-01 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="3" y="3" width="7" height="8" fill="#3D9E30" opacity="0.3"/>
+                                <rect x="3" y="12" width="7" height="9" fill="#3D9E30" opacity="0.3"/>
+                                <rect x="11" y="3" width="10" height="8" fill="#3D9E30" opacity="0.5"/>
+                                <rect x="11" y="12" width="10" height="9" fill="#3D9E30" opacity="0.5"/>
+                                <rect x="5" y="5" width="1.5" height="1.5" fill="#3D9E30"/>
+                                <rect x="7.5" y="5" width="1.5" height="1.5" fill="#3D9E30"/>
+                                <rect x="5" y="7.5" width="1.5" height="1.5" fill="#3D9E30"/>
+                                <rect x="7.5" y="7.5" width="1.5" height="1.5" fill="#3D9E30"/>
+                                <rect x="13" y="5" width="1.5" height="1.5" fill="#3D9E30"/>
+                                <rect x="15.5" y="5" width="1.5" height="1.5" fill="#3D9E30"/>
+                                <rect x="18" y="5" width="1.5" height="1.5" fill="#3D9E30"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-title">Urban Residential Communities</div>
+                            <div class="card-category">Urban Residential</div>
+                        </div>
+                    </div>
+
+                    <p class="card-description">Names specific apartment complexes, condo buildings, and loft communities near the store. This is the urban equivalent of the "Nearby Neighborhoods" bullet — it gives readers in those buildings immediate recognition and signals the location was made for them.</p>
+
+                    <div class="card-label">Example Copy</div>
+                    <div class="example-copy">"Serving residents of the Metropolitan Lofts, Riverside Towers, and the Grandview Residences, our facility is the trusted storage choice for urban professionals and growing families throughout the downtown core."</div>
+
+                    <div class="card-label">Icon Guidance</div>
+                    <div class="icon-guidance">Stylized apartment or loft building with visible windows. Should feel modern, urban, and residential. Avoid generic or overly corporate imagery.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SELECTION LOGIC -->
+        <section class="location-types-section">
+            <h2>Bullet Selection Framework</h2>
+            <p>Use this guide to understand the priority order for selecting 4 bullets based on location type. Every location gets exactly 4 bullets; the challenge is choosing which ones matter most to that location's specific audience and draw pattern.</p>
+
+            <table class="selection-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Neighborhood Locations</th>
+                        <th style="width: 25%;">Mixed-Draw Locations</th>
+                        <th style="width: 25%;">Metro/Wide-Draw Locations</th>
+                        <th style="width: 25%;">Anchor-Driven Locations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. Home Community</strong><br>Sets the neighborhood context</td>
+                        <td><strong>1. Home Community</strong><br>Establishes primary base</td>
+                        <td><strong>1. Second City Draw OR Home Community</strong><br>Whichever drives more traffic</td>
+                        <td><strong>1. Lead Anchor</strong><br>University, military, airport, or landmark</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. Nearby Neighborhoods</strong><br>Name subdivisions and communities</td>
+                        <td><strong>2. Nearby Neighborhoods OR Urban Residential</strong><br>Hyperlocal specificity</td>
+                        <td><strong>2. Geographic Access</strong><br>Highway/airport/transit access</td>
+                        <td><strong>2. Second City Draw</strong><br>If anchor straddles municipal line</td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. Schools OR Military/University</strong><br>Family anchors or major institutions</td>
+                        <td><strong>3. Best Anchor (A-01 through A-04)</strong><br>University, military, schools, landmark</td>
+                        <td><strong>3. Top Anchor</strong><br>University or major institution</td>
+                        <td><strong>3. Notable Landmark</strong><br>Geographic orientation anchor</td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. Highway/Interstate Access OR Recreation</strong><br>Freeway exit or lifestyle fit</td>
+                        <td><strong>4. Geographic Access OR Second City</strong><br>Highway access or cross-border draw</td>
+                        <td><strong>4. Urban Residential OR Second Anchor</strong><br>Urban markets or secondary institution</td>
+                        <td><strong>4. Home Community</strong><br>Secondary geographic context</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-top: 2rem;">
+                <p style="color: #555; margin: 0;"><strong>Key principle:</strong> Every location's 4 bullets tell a unique story. The selection logic above provides a framework, but the final choice should reflect the actual data — customer draw patterns, confirmed nearby institutions, and geographic realities. When in doubt, choose the bullets that are most distinctive and verifiable.</p>
+            </div>
+        </section>
+
+        <!-- DESIGN PRINCIPLES -->
+        <section class="principles-section">
+            <h2>Design & Editorial Principles</h2>
+
+            <div class="principle">
+                <div class="principle-title">Persona Shapes Tone, Not Selection</div>
+                <div class="principle-text">The same university bullet reads very differently depending on whether the location skews toward students and young professionals or toward academic professionals and families. Selection is data-driven; tone is persona-driven. A family-focused location might say "close to excellent schools," while a young professional area might say "steps from campus life." Both are true; both serve their audience.</div>
+            </div>
+
+            <div class="principle">
+                <div class="principle-title">Copy Must Be Verifiable</div>
+                <div class="principle-text">Every neighborhood name, distance, exit number, and institution claim is confirmed against location data before the bullet copy is finalized. This isn't aspirational copy — it's fact-based content grounded in geography and customer behavior. Vague claims like "near shopping and dining" have no place here.</div>
+            </div>
+
+            <div class="principle">
+                <div class="principle-title">Exactly 4 Bullets, Always</div>
+                <div class="principle-text">The constraint of 4 bullets forces prioritization and discipline. It prevents "everything but the kitchen sink" lists and ensures each bullet earns its place on the page. This discipline strengthens the overall narrative.</div>
+            </div>
+
+            <div class="principle">
+                <div class="principle-title">Embrace Specificity</div>
+                <div class="principle-text">Name the neighborhoods, schools, universities, and landmarks by their actual names. Readers recognize "Riverside Lofts" and "Lincoln High School" in ways they never will recognize "nearby residential communities" or "local schools." Specificity builds trust and relevance.</div>
+            </div>
+
+            <div class="principle">
+                <div class="principle-title">Icons Are Guides, Not Rigid Rules</div>
+                <div class="principle-text">The icon guidance provided here is directional. UX and brand teams should adapt icons to match Extra Space Storage's visual identity while preserving the semantic meaning and green accent color (#3D9E30).</div>
+            </div>
+
+            <div class="principle">
+                <div class="principle-title">Strip Away Technical Details</div>
+                <div class="principle-text">The audience is the client's brand and UX teams, not internal developers or data engineers. No mention of APIs, data sources, methodology, or pipeline references. The focus is storytelling, not mechanics.</div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>EXR Content Bullet Library v2 — Strategic framework for location page storytelling</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">For questions about implementation or content adaptation, contact your brand and UX team.</p>
+    </footer>
+</body>
+</html>
