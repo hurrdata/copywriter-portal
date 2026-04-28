@@ -22,10 +22,10 @@ DATABASE_URL = os.environ.get("DIRECT_URL")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 # --- BATCH SETTINGS ---
-MODEL_NAME = 'gemini-2.0-flash'
-BATCH_LIMIT = 30      # Full test batch
+MODEL_NAME = 'gemini-2.5-flash'
+BATCH_LIMIT = 5       # Small sample test as requested
 MAX_WORKERS = 5       # How many stores to process in parallel
-OVERWRITE_EXISTING = True # Forcing refresh for the final test
+OVERWRITE_EXISTING = True # Forcing refresh to test the new rules
 # ----------------------
 
 def strip_html(html_str):
@@ -33,13 +33,12 @@ def strip_html(html_str):
     return BeautifulSoup(html_str, "html.parser").get_text(separator="\n", strip=True)
 
 def load_context_files():
-    with open('EXR_Content_Bullet_Library_v2.html', 'r') as f:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(script_dir, 'EXR_Content_Bullet_Library_v2.html'), 'r') as f:
         rules = strip_html(f.read())
-    with open('Antioch_Location_Mockup.html', 'r') as f:
-        antioch = strip_html(f.read())
-    with open('Santa_Cruz_Location_Mockup.html', 'r') as f:
-        santa_cruz = strip_html(f.read())
-    return rules, antioch, santa_cruz
+    with open(os.path.join(script_dir, 'human_gold_standards.html'), 'r') as f:
+        gold_standards = strip_html(f.read())
+    return rules, gold_standards
 
 def insert_facility(cur, row_dict):
     """Inserts a facility into the Prisma Facility table if it doesn't exist, returning its ID."""
@@ -65,7 +64,7 @@ def insert_facility(cur, row_dict):
         return None
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
-def generate_copy_for_facility(client, rules, antioch, santa_cruz, row_dict):
+def generate_copy_for_facility(client, rules, gold_standards, row_dict):
     """Calls Gemini to generate the copy based on rules and provided data."""
     prompt = f"""
 You are an Extra Space Storage SEO copywriter. Your task is to write the
@@ -167,9 +166,11 @@ real, specific names from these lists rather than writing generic copy.
   "Silver Lakes Middle School" not "nearby schools").
 - `POIs — Residential Areas` → Use real apartment/condo complex names when
   targeting renters (e.g. "residents of Courtyards of Broward...").
-- `POIs — Parks/Greenspace` → Can be used to enrich a neighborhood bullet with
-  natural landmark references.
-- Items marked with * are "Recognized POIs" — prioritize these in your copy.
+### RULE 7 — PRIORITY MATRIX & COMBINATORIAL BULLETS
+When building bullets, strictly adhere to these priorities:
+- **Top Priorities (Must Haves if applicable):** Home community, nearby neighborhoods, second city draw. Interstate access (ONLY if very close; otherwise deprioritize). College & Military (very strong signal, feature every time if close). Urban residential communities (high priority in large/downtown cities).
+- **Secondary Priorities (Backups):** Nearby schools, landmarks. Marina/RV (small % of stores, use only if very prominent).
+- **The "Santa Cruz" Mix & Match Rule:** Being narrowly focused is great, but flexibility is allowed to get "an extra bullet in" (fitting 5 concepts into 4 slots). For example, if a store is highly urban, you can combine Interstate Access + Specific Neighborhoods into a single bullet to save room for College or Military.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ## REFERENCE MATERIALS
@@ -178,11 +179,8 @@ real, specific names from these lists rather than writing generic copy.
 Master Rulebook:
 {rules}
 
-Example — Antioch, CA:
-{antioch}
-
-Example — Santa Cruz, CA:
-{santa_cruz}
+Gold Standard Examples (Mimic this cadence, structure, and mixing strategy):
+{gold_standards}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ## LOCATION DATA FOR THIS STORE
@@ -221,7 +219,7 @@ Do not invent new categories.
         return data[0]
     return data
 
-def process_single_store(store_index, total_stores, row, db_pool, client, rules, antioch, santa_cruz):
+def process_single_store(store_index, total_stores, row, db_pool, client, rules, gold_standards):
     """Processes a single store: Check DB -> Generate -> Save."""
     store_num = row['Store Number']
     conn = db_pool.getconn()
@@ -250,7 +248,7 @@ def process_single_store(store_index, total_stores, row, db_pool, client, rules,
             row_dict.update(db_geo)
 
         print(f"[{store_index}/{total_stores}] Store {store_num}: Requesting Copy from {MODEL_NAME}...", flush=True)
-        copy_json = generate_copy_for_facility(client, rules, antioch, santa_cruz, row_dict)
+        copy_json = generate_copy_for_facility(client, rules, gold_standards, row_dict)
         
         print(f"[{store_index}/{total_stores}] Store {store_num}: Saving Draft to Postgres...", flush=True)
         cur.execute("""
@@ -305,7 +303,7 @@ def main():
             if os.path.exists(p): return p
         return name
 
-    rules, antioch, santa_cruz = load_context_files()
+    rules, gold_standards = load_context_files()
     
     print("Reading expansion files...", flush=True)
     master_file = find_file('output_final.xlsx')
@@ -333,7 +331,7 @@ def main():
         for i, (_, row) in enumerate(test_df.iterrows()):
             executor.submit(
                 process_single_store, 
-                i + 1, total_stores, row, db_pool, client, rules, antioch, santa_cruz
+                i + 1, total_stores, row, db_pool, client, rules, gold_standards
             )
 
     db_pool.closeall()
