@@ -301,41 +301,6 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
               {geo ? (
                 <div className="space-y-4">
 
-                  {/* 0. GENERATION STATISTICS (Audit) */}
-                  {activeFacility?.draft?.modelName && (
-                    <ContextCard 
-                      icon={<div className="bg-amber-100 p-2 rounded-lg text-amber-700"><Clock size={16} /></div>} 
-                      title="Generation Insights"
-                      accent="border-l-amber-500"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                          <span className="text-[10px] uppercase text-gray-400 font-black">AI Model</span>
-                          <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded capitalize">
-                            {activeFacility.draft.modelName.replace('gemini-2.5-', '').replace('claude-3-5-', '')}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-[10px] uppercase text-gray-400 font-black block mb-1">Tokens</span>
-                            <div className="text-xs font-medium text-gray-600">
-                              <span className="font-bold text-gray-800">{activeFacility.draft.inputTokens?.toLocaleString()}</span> in
-                              <br/>
-                              <span className="font-bold text-gray-800">{activeFacility.draft.outputTokens?.toLocaleString()}</span> out
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[10px] uppercase text-gray-400 font-black block mb-1">Estimated Cost</span>
-                            <div className="text-lg font-black text-green-700 leading-none">
-                              ${Number(activeFacility.draft.cost || 0).toFixed(4)}
-                            </div>
-                            <span className="text-[9px] text-gray-300 font-bold uppercase italic">Market Rate</span>
-                          </div>
-                        </div>
-                      </div>
-                    </ContextCard>
-                  )}
-
                   {/* 1. CUSTOMER ZIP MIX */}
                   {zipMix.length > 0 && (
                     <ContextCard icon={<div className="bg-indigo-100 p-2 rounded-lg text-indigo-700"><BarChart3 size={16} /></div>} title="Customer ZIP Mix">
@@ -479,6 +444,35 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
                       )}
                     </div>
                   </ContextCard>
+
+                  {/* 10. GENERATION STATISTICS (Audit - Muted at bottom) */}
+                  {activeFacility?.draft?.modelName && (
+                    <div className="mt-8 pt-8 border-t border-gray-200">
+                      <div className="flex items-center gap-2 mb-4 opacity-40 grayscale">
+                        <BarChart3 size={14} />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">System Audit Metadata</h4>
+                      </div>
+                      <div className="bg-gray-100/50 rounded-xl p-4 border border-gray-200/50">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">Engine</span>
+                          <span className="text-[10px] font-black text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200 shadow-sm capitalize">
+                            {activeFacility.draft.modelName.replace('gemini-2.5-', '').replace('claude-3-5-', '')}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-end">
+                          <div className="text-[10px] text-gray-400 font-medium leading-tight">
+                            {activeFacility.draft.inputTokens?.toLocaleString()} in / {activeFacility.draft.outputTokens?.toLocaleString()} out
+                            <br/>
+                            <span className="text-[9px] opacity-60">Tokens Processed</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[9px] font-black text-gray-400 uppercase block leading-none mb-1">Market Cost</span>
+                            <span className="text-sm font-bold text-gray-500">${Number(activeFacility.draft.cost || 0).toFixed(4)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 </div>
               ) : (
