@@ -23,9 +23,17 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 # --- BATCH SETTINGS ---
 MODEL_NAME = 'gemini-2.5-flash'
-BATCH_LIMIT = 5       # Small sample test as requested
+BATCH_LIMIT = 30       # Full test batch as requested
 MAX_WORKERS = 5       # How many stores to process in parallel
 OVERWRITE_EXISTING = True # Forcing refresh to test the new rules
+
+# Market rates per 1M tokens (USD)
+MODEL_COSTS = {
+    'gemini-2.5-flash': {'input': 0.10 / 1_000_000, 'output': 0.40 / 1_000_000},
+    'gemini-2.0-flash': {'input': 0.10 / 1_000_000, 'output': 0.40 / 1_000_000},
+    'gemini-1.5-pro':   {'input': 3.50 / 1_000_000, 'output': 10.50 / 1_000_000},
+    'claude-3-5-sonnet-20241022': {'input': 3.00 / 1_000_000, 'output': 15.00 / 1_000_000}
+}
 # ----------------------
 
 def strip_html(html_str):
@@ -65,7 +73,7 @@ def insert_facility(cur, row_dict):
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
 def generate_copy_for_facility(client, rules, gold_standards, row_dict):
-    """Calls Gemini to generate the copy based on rules and provided data. Returns (json, prompt)."""
+    """Calls Gemini to generate the copy based on rules and provided data. Returns (json, prompt, usage)."""
     prompt = f"""
 You are an Extra Space Storage SEO copywriter. Your task is to write the
 'About Our Location' section for a specific facility page.
@@ -214,10 +222,11 @@ Do not invent new categories.
         contents=prompt,
         config=genai_types.GenerateContentConfig(response_mime_type="application/json")
     )
+    usage = response.usage_metadata
     data = json.loads(response.text)
     if isinstance(data, list) and len(data) > 0:
-        return data[0], prompt
-    return data, prompt
+        return data[0], prompt, usage
+    return data, prompt, usage
 
 def process_single_store(store_index, total_stores, row, db_pool, client, rules, gold_standards):
     """Processes a single store: Check DB -> Generate -> Save."""
@@ -248,12 +257,22 @@ def process_single_store(store_index, total_stores, row, db_pool, client, rules,
             row_dict.update(db_geo)
 
         print(f"[{store_index}/{total_stores}] Store {store_num}: Requesting Copy from {MODEL_NAME}...", flush=True)
-        copy_json, final_prompt = generate_copy_for_facility(client, rules, gold_standards, row_dict)
+        copy_json, final_prompt, usage = generate_copy_for_facility(client, rules, gold_standards, row_dict)
         
-        print(f"[{store_index}/{total_stores}] Store {store_num}: Saving Draft to Postgres (with prompt audit)...", flush=True)
+        # Calculate Cost
+        input_tokens = usage.prompt_token_count or 0
+        output_tokens = usage.candidates_token_count or 0
+        rates = MODEL_COSTS.get(MODEL_NAME, {'input': 0, 'output': 0})
+        estimated_cost = (input_tokens * rates['input']) + (output_tokens * rates['output'])
+
+        print(f"[{store_index}/{total_stores}] Store {store_num}: Saving Draft to Postgres (Cost: ${estimated_cost:,.4f})...", flush=True)
         cur.execute("""
-            INSERT INTO "CopyDraft" ("facilityId", "introParagraph", "bullet1", "bullet1Tag", "bullet2", "bullet2Tag", "bullet3", "bullet3Tag", "bullet4", "bullet4Tag", "prompt", "status", "updatedAt")
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending', NOW())
+            INSERT INTO "CopyDraft" (
+                "facilityId", "introParagraph", "bullet1", "bullet1Tag", "bullet2", "bullet2Tag", 
+                "bullet3", "bullet3Tag", "bullet4", "bullet4Tag", "prompt", 
+                "inputTokens", "outputTokens", "cost", "modelName", "status", "updatedAt"
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending', NOW())
             ON CONFLICT ("facilityId") DO UPDATE SET
             "introParagraph" = EXCLUDED."introParagraph",
             "bullet1" = EXCLUDED."bullet1",
@@ -265,6 +284,10 @@ def process_single_store(store_index, total_stores, row, db_pool, client, rules,
             "bullet4" = EXCLUDED."bullet4",
             "bullet4Tag" = EXCLUDED."bullet4Tag",
             "prompt" = EXCLUDED."prompt",
+            "inputTokens" = EXCLUDED."inputTokens",
+            "outputTokens" = EXCLUDED."outputTokens",
+            "cost" = EXCLUDED."cost",
+            "modelName" = EXCLUDED."modelName",
             "updatedAt" = NOW();
         """, (
             facility_id,
@@ -277,7 +300,11 @@ def process_single_store(store_index, total_stores, row, db_pool, client, rules,
             copy_json.get('bullet3Tag', ''),
             copy_json.get('bullet4', ''),
             copy_json.get('bullet4Tag', ''),
-            final_prompt
+            final_prompt,
+            input_tokens,
+            output_tokens,
+            estimated_cost,
+            MODEL_NAME
         ))
         conn.commit()
         print(f"[{store_index}/{total_stores}] Store {store_num}: Generated and Saved!", flush=True)

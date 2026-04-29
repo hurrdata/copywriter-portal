@@ -47,6 +47,13 @@ model CopyDraft {
   status           String   @default("Pending") 
   approvedBy       String?
   
+  // Generation Audit Metadata
+  prompt           String?  @db.Text
+  inputTokens      Int?
+  outputTokens     Int?
+  cost             Decimal? @db.Decimal(10, 6)
+  modelName        String?
+  
   facilityId       Int      @unique
   facility         Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   

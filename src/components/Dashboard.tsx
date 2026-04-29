@@ -301,6 +301,41 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
               {geo ? (
                 <div className="space-y-4">
 
+                  {/* 0. GENERATION STATISTICS (Audit) */}
+                  {activeFacility?.draft?.modelName && (
+                    <ContextCard 
+                      icon={<div className="bg-amber-100 p-2 rounded-lg text-amber-700"><Clock size={16} /></div>} 
+                      title="Generation Insights"
+                      accent="border-l-amber-500"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center pb-2 border-b border-gray-50">
+                          <span className="text-[10px] uppercase text-gray-400 font-black">AI Model</span>
+                          <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded capitalize">
+                            {activeFacility.draft.modelName.replace('gemini-2.5-', '').replace('claude-3-5-', '')}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-[10px] uppercase text-gray-400 font-black block mb-1">Tokens</span>
+                            <div className="text-xs font-medium text-gray-600">
+                              <span className="font-bold text-gray-800">{activeFacility.draft.inputTokens?.toLocaleString()}</span> in
+                              <br/>
+                              <span className="font-bold text-gray-800">{activeFacility.draft.outputTokens?.toLocaleString()}</span> out
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] uppercase text-gray-400 font-black block mb-1">Estimated Cost</span>
+                            <div className="text-lg font-black text-green-700 leading-none">
+                              ${Number(activeFacility.draft.cost || 0).toFixed(4)}
+                            </div>
+                            <span className="text-[9px] text-gray-300 font-bold uppercase italic">Market Rate</span>
+                          </div>
+                        </div>
+                      </div>
+                    </ContextCard>
+                  )}
+
                   {/* 1. CUSTOMER ZIP MIX */}
                   {zipMix.length > 0 && (
                     <ContextCard icon={<div className="bg-indigo-100 p-2 rounded-lg text-indigo-700"><BarChart3 size={16} /></div>} title="Customer ZIP Mix">
