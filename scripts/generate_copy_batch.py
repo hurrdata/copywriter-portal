@@ -65,7 +65,7 @@ def insert_facility(cur, row_dict):
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
 def generate_copy_for_facility(client, rules, gold_standards, row_dict):
-    """Calls Gemini to generate the copy based on rules and provided data."""
+    """Calls Gemini to generate the copy based on rules and provided data. Returns (json, prompt)."""
     prompt = f"""
 You are an Extra Space Storage SEO copywriter. Your task is to write the
 'About Our Location' section for a specific facility page.
@@ -216,8 +216,8 @@ Do not invent new categories.
     )
     data = json.loads(response.text)
     if isinstance(data, list) and len(data) > 0:
-        return data[0]
-    return data
+        return data[0], prompt
+    return data, prompt
 
 def process_single_store(store_index, total_stores, row, db_pool, client, rules, gold_standards):
     """Processes a single store: Check DB -> Generate -> Save."""
@@ -248,12 +248,12 @@ def process_single_store(store_index, total_stores, row, db_pool, client, rules,
             row_dict.update(db_geo)
 
         print(f"[{store_index}/{total_stores}] Store {store_num}: Requesting Copy from {MODEL_NAME}...", flush=True)
-        copy_json = generate_copy_for_facility(client, rules, gold_standards, row_dict)
+        copy_json, final_prompt = generate_copy_for_facility(client, rules, gold_standards, row_dict)
         
-        print(f"[{store_index}/{total_stores}] Store {store_num}: Saving Draft to Postgres...", flush=True)
+        print(f"[{store_index}/{total_stores}] Store {store_num}: Saving Draft to Postgres (with prompt audit)...", flush=True)
         cur.execute("""
-            INSERT INTO "CopyDraft" ("facilityId", "introParagraph", "bullet1", "bullet1Tag", "bullet2", "bullet2Tag", "bullet3", "bullet3Tag", "bullet4", "bullet4Tag", "status", "updatedAt")
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending', NOW())
+            INSERT INTO "CopyDraft" ("facilityId", "introParagraph", "bullet1", "bullet1Tag", "bullet2", "bullet2Tag", "bullet3", "bullet3Tag", "bullet4", "bullet4Tag", "prompt", "status", "updatedAt")
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending', NOW())
             ON CONFLICT ("facilityId") DO UPDATE SET
             "introParagraph" = EXCLUDED."introParagraph",
             "bullet1" = EXCLUDED."bullet1",
@@ -264,6 +264,7 @@ def process_single_store(store_index, total_stores, row, db_pool, client, rules,
             "bullet3Tag" = EXCLUDED."bullet3Tag",
             "bullet4" = EXCLUDED."bullet4",
             "bullet4Tag" = EXCLUDED."bullet4Tag",
+            "prompt" = EXCLUDED."prompt",
             "updatedAt" = NOW();
         """, (
             facility_id,
@@ -275,7 +276,8 @@ def process_single_store(store_index, total_stores, row, db_pool, client, rules,
             copy_json.get('bullet3', ''),
             copy_json.get('bullet3Tag', ''),
             copy_json.get('bullet4', ''),
-            copy_json.get('bullet4Tag', '')
+            copy_json.get('bullet4Tag', ''),
+            final_prompt
         ))
         conn.commit()
         print(f"[{store_index}/{total_stores}] Store {store_num}: Generated and Saved!", flush=True)
