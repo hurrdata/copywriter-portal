@@ -8,6 +8,19 @@ from bs4 import BeautifulSoup
 import backoff
 from concurrent.futures import ThreadPoolExecutor
 from psycopg2 import pool
+from pydantic import BaseModel, Field
+
+class CopyDraftSchema(BaseModel):
+    introParagraph: str = Field(description="2-3 sentence intro grounding the reader in local geography and community. Must include the crossroads if provided.")
+    bullet1: str = Field(description="Full text of bullet 1.")
+    bullet1Tag: str = Field(description="Exact category name from the EXR Library (e.g. 'Home Community', 'Nearby Neighborhoods', etc.)")
+    bullet2: str = Field(description="Full text of bullet 2.")
+    bullet2Tag: str = Field(description="Exact category name from the EXR Library")
+    bullet3: str = Field(description="Full text of bullet 3.")
+    bullet3Tag: str = Field(description="Exact category name from the EXR Library")
+    bullet4: str = Field(description="Full text of bullet 4.")
+    bullet4Tag: str = Field(description="Exact category name from the EXR Library")
+
 
 # Load environment variables from the Next.js portal
 # Look in current dir, then parent dir
@@ -23,7 +36,7 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 
 # --- BATCH SETTINGS ---
 MODEL_NAME = 'gemini-2.5-flash'
-BATCH_LIMIT = 30       # Full test batch as requested
+BATCH_LIMIT = 1       # Quick test for structured output
 MAX_WORKERS = 5       # How many stores to process in parallel
 OVERWRITE_EXISTING = True # Forcing refresh to test the new rules
 
@@ -197,36 +210,34 @@ Gold Standard Examples (Mimic this cadence, structure, and mixing strategy):
 {json.dumps(row_dict, indent=2, default=str)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-## OUTPUT FORMAT
+## OUTPUT INSTRUCTIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Return ONLY a raw JSON object. No markdown. No backticks. No explanation.
+Your output must be a single JSON object. 
 Every bullet tag MUST be selected from the 12 official EXR Library categories.
 Do not invent new categories.
-
-{{
-  "introParagraph": "2-3 sentence intro grounding the reader in local geography and community. Must include the crossroads if provided.",
-  "bullet1": "Full text of bullet 1.",
-  "bullet1Tag": "Exact category name from the EXR Library",
-  "bullet2": "Full text of bullet 2.",
-  "bullet2Tag": "Exact category name from the EXR Library",
-  "bullet3": "Full text of bullet 3.",
-  "bullet3Tag": "Exact category name from the EXR Library",
-  "bullet4": "Full text of bullet 4.",
-  "bullet4Tag": "Exact category name from the EXR Library"
-}}
 """
 
     response = client.models.generate_content(
         model=MODEL_NAME,
         contents=prompt,
-        config=genai_types.GenerateContentConfig(response_mime_type="application/json")
+        config=genai_types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_json_schema=CopyDraftSchema.model_json_schema()
+        )
     )
     usage = response.usage_metadata
-    data = json.loads(response.text)
-    if isinstance(data, list) and len(data) > 0:
-        return data[0], prompt, usage
-    return data, prompt, usage
+    
+    # Use the Pydantic model to validate and parse the response
+    try:
+        validated_data = CopyDraftSchema.model_validate_json(response.text)
+        return validated_data.model_dump(), prompt, usage
+    except Exception as e:
+        print(f"Schema validation failed: {e}")
+        # Fallback to standard json loads if validation fails
+        data = json.loads(response.text)
+        return data, prompt, usage
+
 
 def process_single_store(store_index, total_stores, row, db_pool, client, rules, gold_standards):
     """Processes a single store: Check DB -> Generate -> Save."""
