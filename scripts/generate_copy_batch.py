@@ -15,13 +15,13 @@ import anthropic
 class CopyDraftSchema(BaseModel):
     introParagraph: str = Field(description="2-3 sentence intro grounding the reader in local geography and community. Must include the crossroads if provided.")
     bullet1: str = Field(description="Full text of bullet 1.")
-    bullet1Tag: str = Field(description="Exact category name from the EXR Library (e.g. 'Home Community', 'Nearby Neighborhoods', etc.)")
+    bullet1Tag: str = Field(description="Category name. Must be EXACTLY one of: 'Home Community', 'Nearby Neighborhoods', 'Second City Draw', 'Interstate/Highway Exit', 'Airport Proximity', 'University/College Proximity', 'Military Base/Community', 'Local Schools', 'Notable Nearby Landmark', 'Marina/Waterfront', 'RV Park/Outdoor Recreation', 'Urban Residential Communities'")
     bullet2: str = Field(description="Full text of bullet 2.")
-    bullet2Tag: str = Field(description="Exact category name from the EXR Library")
+    bullet2Tag: str = Field(description="Category name (must be one of the 12 listed above).")
     bullet3: str = Field(description="Full text of bullet 3.")
-    bullet3Tag: str = Field(description="Exact category name from the EXR Library")
+    bullet3Tag: str = Field(description="Category name (must be one of the 12 listed above).")
     bullet4: str = Field(description="Full text of bullet 4.")
-    bullet4Tag: str = Field(description="Exact category name from the EXR Library")
+    bullet4Tag: str = Field(description="Category name (must be one of the 12 listed above).")
 
 
 # Load environment variables from the Next.js portal
@@ -170,12 +170,11 @@ If any Non-Home ZIP has a share > 10%, acknowledge that community by name.
 Always pull real, specific names from `POIs - Neighborhoods`, `POIs - Schools`, and `POIs - Residential Areas`.
 
 ---
-
 ### RULE 7 - TIERED BULLET SELECTION (fill from Tier 1 down)
-1. Tier 1: Home Community, Nearby Neighborhoods, Urban Residential, Second City Draw.
-2. Tier 2: Interstate/Highway Exit, Airport Proximity, University/College, Military Base.
-3. Tier 3: Local Schools, Notable Landmark.
-4. Tier 4: Marina/Waterfront, RV Park/Outdoor (intro mention preferred).
+1. Tier 1: Home Community, Nearby Neighborhoods, Urban Residential Communities, Second City Draw.
+2. Tier 2: Interstate/Highway Exit, Airport Proximity, University/College Proximity, Military Base/Community.
+3. Tier 3: Local Schools, Notable Nearby Landmark.
+4. Tier 4: Marina/Waterfront, RV Park/Outdoor Recreation (intro mention preferred).
 
 **REMINDER**: Use 4 DIFFERENT categories.
 
