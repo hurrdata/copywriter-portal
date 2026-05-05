@@ -728,47 +728,103 @@
         <!-- SELECTION LOGIC -->
         <section class="location-types-section">
             <h2>Bullet Selection Framework</h2>
-            <p>Use this guide to understand the priority order for selecting 4 bullets based on location type. Every location gets exactly 4 bullets; the challenge is choosing which ones matter most to that location's specific audience and draw pattern.</p>
+            <p>Fill from Tier 1 down. Stop when you have 4 bullets. The question is never "what can we say?" — it's "what matters most to this audience?" Each tier represents a signal strength, not a location type. Apply the same logic everywhere and let the data determine which tiers are available for a given store.</p>
 
-            <table class="selection-table">
-                <thead>
-                    <tr>
-                        <th style="width: 25%;">Neighborhood Locations</th>
-                        <th style="width: 25%;">Mixed-Draw Locations</th>
-                        <th style="width: 25%;">Metro/Wide-Draw Locations</th>
-                        <th style="width: 25%;">Anchor-Driven Locations</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>1. Home Community</strong><br>Sets the neighborhood context</td>
-                        <td><strong>1. Home Community</strong><br>Establishes primary base</td>
-                        <td><strong>1. Second City Draw OR Home Community</strong><br>Whichever drives more traffic</td>
-                        <td><strong>1. Lead Anchor</strong><br>University, military, airport, or landmark</td>
-                    </tr>
-                    <tr>
-                        <td><strong>2. Nearby Neighborhoods</strong><br>Name subdivisions and communities</td>
-                        <td><strong>2. Nearby Neighborhoods OR Urban Residential</strong><br>Hyperlocal specificity</td>
-                        <td><strong>2. Geographic Access</strong><br>Highway/airport/transit access</td>
-                        <td><strong>2. Second City Draw</strong><br>If anchor straddles municipal line</td>
-                    </tr>
-                    <tr>
-                        <td><strong>3. Schools OR Military/University</strong><br>Family anchors or major institutions</td>
-                        <td><strong>3. Best Anchor (A-01 through A-04)</strong><br>University, military, schools, landmark</td>
-                        <td><strong>3. Top Anchor</strong><br>University or major institution</td>
-                        <td><strong>3. Notable Landmark</strong><br>Geographic orientation anchor</td>
-                    </tr>
-                    <tr>
-                        <td><strong>4. Highway/Interstate Access OR Recreation</strong><br>Freeway exit or lifestyle fit</td>
-                        <td><strong>4. Geographic Access OR Second City</strong><br>Highway access or cross-border draw</td>
-                        <td><strong>4. Urban Residential OR Second Anchor</strong><br>Urban markets or secondary institution</td>
-                        <td><strong>4. Home Community</strong><br>Secondary geographic context</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div style="margin: 2rem 0;">
 
-            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-top: 2rem;">
-                <p style="color: #555; margin: 0;"><strong>Key principle:</strong> Every location's 4 bullets tell a unique story. The selection logic above provides a framework, but the final choice should reflect the actual data — customer draw patterns, confirmed nearby institutions, and geographic realities. When in doubt, choose the bullets that are most distinctive and verifiable.</p>
+                <!-- TIER 1 -->
+                <div style="background: white; border-radius: 8px; border-left: 5px solid #1a6b3a; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                        <span style="background: #1a6b3a; color: white; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.7rem; border-radius: 12px; white-space: nowrap;">TIER 1 — ALWAYS INCLUDE</span>
+                        <span style="color: #555; font-size: 0.95rem;">Core story — explains where the location is and who it's for</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+                        <div style="background: #f0f7f4; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">C-01 Home Community</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Always present. Every location, no exceptions.</div>
+                        </div>
+                        <div style="background: #f0f7f4; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">C-02 Nearby Neighborhoods</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">When OSM neighborhood data exists. Heavy lifter — readers in those areas recognize the names immediately.</div>
+                        </div>
+                        <div style="background: #f0f7f4; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">U-01 Urban Residential</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">The urban equivalent of C-02. In downtown and dense urban markets, treat this as Tier 1 — not an afterthought. Urban audiences recognize their building names the same way suburban audiences recognize their subdivision names.</div>
+                        </div>
+                        <div style="background: #f0f7f4; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">C-03 Second City Draw</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Include whenever cross-municipal draw is confirmed (≥10% of customers from a different city). Names the second city explicitly — signals the location serves that audience too.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIER 2 -->
+                <div style="background: white; border-radius: 8px; border-left: 5px solid #2563A8; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                        <span style="background: #2563A8; color: white; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.7rem; border-radius: 12px; white-space: nowrap;">TIER 2 — STRONG SIGNALS</span>
+                        <span style="color: #555; font-size: 0.95rem;">When confirmed, almost always earn a bullet</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+                        <div style="background: #eff4fb; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">G-01 Interstate Exit</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Very strong signal. The verified exit number and cross-street make this exceptionally credible. Include whenever OSM confirms a junction. Rarely optional.</div>
+                        </div>
+                        <div style="background: #eff4fb; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">G-02 Airport Proximity</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Less common, but earns a bullet whenever confirmed. Speaks to business travelers and relocation customers — a distinctive signal worth calling out.</div>
+                        </div>
+                        <div style="background: #eff4fb; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">A-01 University / College</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Must-include in any market where a college or university is within the search radius. Speaks to a well-defined, identifiable audience.</div>
+                        </div>
+                        <div style="background: #eff4fb; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">A-02 Military Base</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Must-include near active installations. Pairs directly with the military discount amenity. This audience knows what they need — name the base and speak to PCS moves and deployment directly.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIER 3 -->
+                <div style="background: white; border-radius: 8px; border-left: 5px solid #9B5E10; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                        <span style="background: #9B5E10; color: white; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.7rem; border-radius: 12px; white-space: nowrap;">TIER 3 — FILL-IN</span>
+                        <span style="color: #555; font-size: 0.95rem;">Use when Tier 1 + 2 don't fill all 4 slots</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+                        <div style="background: #fdf4ec; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">A-03 Local Schools</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Less compelling than institutional anchors. Best for Growing Families persona only. Use when no Tier 2 options are available for that slot — not as a reflexive add-on.</div>
+                        </div>
+                        <div style="background: #fdf4ec; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">A-04 Notable Landmark</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Earns its own bullet only when the landmark is broadly recognizable without explanation — a stadium, regional hospital, or major attraction that people navigate by. If you'd have to explain what it is, weave it into intro copy instead. Proximity threshold: the closer it is, the stronger the case.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TIER 4 -->
+                <div style="background: white; border-radius: 8px; border-left: 5px solid #666; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                        <span style="background: #666; color: white; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.7rem; border-radius: 12px; white-space: nowrap;">TIER 4 — INTRO MENTION ONLY</span>
+                        <span style="color: #555; font-size: 0.95rem;">Rarely justify their own bullet — add texture in opening copy instead</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem;">
+                        <div style="background: #f5f5f5; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">L-01 Marina / Waterfront</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Own bullet only when the Salesforce boat storage flag is confirmed and no stronger option is available. Otherwise, reference in intro copy as a lifestyle signal.</div>
+                        </div>
+                        <div style="background: #f5f5f5; border-radius: 6px; padding: 0.75rem 1rem;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 0.9rem;">L-02 RV Park / Outdoor</div>
+                            <div style="color: #555; font-size: 0.85rem; margin-top: 0.25rem;">Same logic as L-01. Own bullet when Salesforce RV flag is confirmed and no better option exists. Lifestyle texture in intro otherwise.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="background: #f0f7f4; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #3D9E30;">
+                <p style="color: #333; margin: 0 0 0.5rem; font-weight: 700;">Key principle</p>
+                <p style="color: #555; margin: 0;">Fill from Tier 1 down. The goal is 4 bullets that tell a coherent, specific story about why <em>this location</em> is the right choice for <em>this audience</em>. If Tier 1 and 2 give you all 4 — great. If you're reaching into Tier 3 or 4 to fill slots, ask whether the data truly supports the bullet or whether you'd be better served strengthening the intro copy instead. A strong intro that mentions a nearby landmark is almost always better than a weak landmark bullet.</p>
             </div>
         </section>
 
