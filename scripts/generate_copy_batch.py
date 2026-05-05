@@ -39,8 +39,11 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 # --- BATCH SETTINGS ---
 MODEL_NAME = 'claude-sonnet-4-6'              # Claude Sonnet 4.6
 BATCH_LIMIT = 100                          # Production test batch
-MAX_WORKERS = 5                            # How many stores to process in parallel
+MAX_WORKERS = 1                            # Lowered to 1 to stay under 10k/min rate limit
 OVERWRITE_EXISTING = True                  # Forcing refresh to test the new model
+RATE_LIMIT_SLEEP = 30                      # Seconds to wait between stores to avoid 429s
+TARGET_STORES = []                         # If not empty, only process these store numbers (e.g. ['172'])
+# ----------------------
 
 # Market rates per 1M tokens (USD)
 MODEL_COSTS = {
@@ -88,14 +91,23 @@ def insert_facility(cur, row_dict):
         return None
 
 
-def _build_prompt(rules, gold_standards, row_dict):
-    """Builds the shared prompt text used by both Gemini and Claude."""
+def _build_static_context(rules, gold_standards):
+    """Builds the static part of the prompt that can be cached."""
     return f"""
 You are an Extra Space Storage SEO copywriter. Your task is to write the
 'About Our Location' section for a specific facility page.
 
 You must strictly follow the rules in the EXR Content Bullet Library AND the
 Strategic Market Direction below. Strategic rules take full precedence.
+
+------------------------------------------------------------
+## EDITORIAL GUIDELINES (CRITICAL)
+------------------------------------------------------------
+
+- **CONCISENESS**: Bullet points must be concise, punchy, and strictly focused on their specific topic. Avoid fluff.
+- **UNIQUE CATEGORIES**: Every bullet in a store's draft MUST have a unique category tag. Never repeat a category (e.g., do not have two "Home Community" bullets).
+- **AGE HANDLING**: Resident age data (e.g. "Wtd. Median Age") is provided for context only. NEVER explicitly mention ages, age brackets, or "seniors" in the copy. Use this data only to shift the tone (e.g., toward downsizing or convenience).
+- **HUMAN VOICE**: Avoid common AI indicators. DO NOT use em dashes (—). Use simple, direct language. Avoid "perfect" marketing transitions. Write like a local.
 
 ------------------------------------------------------------
 ## RULE HIERARCHY (highest priority first)
@@ -107,129 +119,64 @@ Read the 'Segment' field carefully. It controls the entire editorial direction.
 **SEGMENT A - HOME DOMINANT**
 This store's customers are overwhelmingly local (one ZIP code dominates).
 - Bullet #1 MUST be "Home Community" - describe the immediate neighborhood using
-  names from `POIs - Neighborhoods`. Be specific. Do not use generic references.
-- Bullet #2 MUST be "Nearby Neighborhoods" - list 2-3 specific neighborhood names
-  pulled directly from `POIs - Neighborhoods`. Distance cues (e.g. "just half a mile
-  away") are encouraged.
-- DO NOT use "Second City Draw" as a bullet for Segment A stores.
+  names from `POIs - Neighborhoods`. Be specific.
+- Bullet #2 MUST be "Nearby Neighborhoods" - list 2-3 specific neighborhood names.
 - Intro tone: warm, hyperlocal, community-focused.
 
 **SEGMENT B - MIXED CATCHMENT**
 This store draws from multiple ZIPs with no single dominant source.
 - Bullet #1 should be "Home Community" or "Nearby Neighborhoods".
-- If a second city appears in `Second City Draw`, acknowledge it naturally in the
-  intro or a bullet (e.g. "convenient for residents coming from [City]").
 - Intro tone: balanced, access-forward, broad appeal.
 
 **SEGMENT C - HIGHLY DISTRIBUTED**
 Customers arrive from many different ZIP codes. No single community dominates.
 - Lead with convenience and access - prioritize "Interstate/Highway Exit" and
   "Airport Proximity" bullets if distances qualify.
-- Avoid hyper-neighborhood language since no single community is dominant.
 - Intro tone: logistics-focused, location-advantage driven.
 
 **MISALIGNED**
-The existing content angle does not match the actual customer data.
-- Ignore the 'Content Angle (existing)' and 'Primary Signal (existing)' fields.
-- Build the copy from scratch using ONLY the demographic data and POI data.
-- If `Misaligned Sub-Type` is "Attractor Driven" (e.g., near an airport), the
-  existing copy over-indexed on that attractor. Redirect to the actual community.
-- Intro tone: reset to what the data supports, not the legacy angle.
+- Ignore existing content angle. Build from scratch using demographic and POI data.
+- Intro tone: reset to what the data supports.
 
 ---
 
 ### RULE 2 - CROSSROADS (mandatory geography anchor)
-[PRIMARY_CROSSROADS]: {row_dict.get('nearest_major_intersection', 'Not Available')}
-
-If [PRIMARY_CROSSROADS] is provided (not "Not Available"), you MUST include it
-in the introductory paragraph as the geographic anchor. Example:
-"Conveniently located near the intersection of [Crossroads], our [City] storage
-facility serves the surrounding neighborhoods of..."
+Include the crossroads if provided in the location data as the geographic anchor.
 
 ---
 
 ### RULE 3 - CONTENT HOOK OVERRIDE (Bullet #2 only)
-If 'Content Hook (Bullet 2)' is provided in the data, use that strategic angle
-for your second bullet - UNLESS the Segment is "Misaligned" (Rule 1 wins).
+If 'Content Hook (Bullet 2)' is provided, use that angle unless the Segment is "Misaligned".
 
 ---
 
 ### RULE 4 - DEMOGRAPHIC MODIFIERS (apply after Segment rules)
-These adjust tone and secondary bullets, not the primary bullet selection.
-
-- MILITARY: If 'military_base_distance_mi' < 15 - include a military/deployment
-  angle in a bullet or the intro.
-- SENIORS: If 'Wtd. Median Age' > 55 - shift tone toward downsizing, convenience,
-  and peace of mind.
-- UNIVERSITY: If `POIs - Universities/Colleges` has a result within 5 miles -
-  include a student storage mention for summer/dorm transitions.
-- PREMIUM: If 'Wtd. Median Income' > 100000 - use a professional, secure, and
-  elevated tone (business inventory, climate control, high-value items).
-- RENTERS: If 'Wtd. Renter Rate %' > 40 - reference apartment decluttering and
-  flexible month-to-month storage for frequent movers.
+These adjust tone and secondary bullets.
+- MILITARY: < 15 mi -> include military angle.
+- SENIORS: Age > 55 -> shift tone toward downsizing/convenience (WITHOUT mentioning age).
+- UNIVERSITY: < 5 mi -> include student storage.
+- PREMIUM: Income > 100k -> use professional, secure tone.
+- RENTERS: Renter Rate > 40% -> reference apartment decluttering.
 
 ---
 
 ### RULE 5 - ZIP COMMUNITY ACKNOWLEDGMENT
-Read `zip_customer_mix` from the data. It is a list of ZIP codes and their
-customer share percentages.
-- If any Non-Home ZIP has a share > 10%, you MUST acknowledge that community
-  somewhere in the copy (intro or a bullet) by referencing its city or
-  neighborhood name. Example: "We also welcome neighbors from [nearby city]."
-- Use the city name associated with the ZIP, not the ZIP code number itself.
+If any Non-Home ZIP has a share > 10%, acknowledge that community by name.
 
 ---
 
-### RULE 6 - POI MINING (use real names, not generic references)
-You have access to pipe-delimited lists of verified nearby POIs. Always pull
-real, specific names from these lists rather than writing generic copy.
+### RULE 6 - POI MINING
+Always pull real, specific names from `POIs - Neighborhoods`, `POIs - Schools`, and `POIs - Residential Areas`.
 
-- `POIs - Neighborhoods` - Use actual neighborhood names in Home Community /
-  Nearby Neighborhoods bullets (e.g. "Sabal Palms Estates" not "local neighborhoods").
-- `POIs - Schools` - If referencing local schools, use real names (e.g.
-  "Silver Lakes Middle School" not "nearby schools").
-- `POIs - Residential Areas` - Use real apartment/condo complex names when
-  targeting renters (e.g. "residents of Courtyards of Broward...").
+---
 
 ### RULE 7 - TIERED BULLET SELECTION (fill from Tier 1 down)
-When building bullets, strictly follow this 4-tier priority system. Fill from
-Tier 1 down. Stop when you have 4 bullets.
+1. Tier 1: Home Community, Nearby Neighborhoods, Urban Residential, Second City Draw.
+2. Tier 2: Interstate/Highway Exit, Airport Proximity, University/College, Military Base.
+3. Tier 3: Local Schools, Notable Landmark.
+4. Tier 4: Marina/Waterfront, RV Park/Outdoor (intro mention preferred).
 
-**TIER 1 - ALWAYS INCLUDE (core story)**
-- C-01 Home Community: Always present. Every location, no exceptions.
-- C-02 Nearby Neighborhoods: When neighborhood data exists. Readers in those
-  areas recognize the names immediately.
-- U-01 Urban Residential Communities: The urban equivalent of C-02. In downtown
-  and dense urban markets, treat this as Tier 1. Urban audiences recognize their
-  building names the same way suburban audiences recognize subdivisions.
-- C-03 Second City Draw: Include whenever cross-municipal draw is confirmed
-  (>=10% of customers from a different city).
-
-**TIER 2 - STRONG SIGNALS (almost always earn a bullet when confirmed)**
-- G-01 Interstate/Highway Exit: Very strong signal. Include whenever a nearby
-  junction is confirmed. Rarely optional.
-- G-02 Airport Proximity: Less common, but earns a bullet whenever confirmed.
-- A-01 University/College: Must-include in any market where a college or
-  university is within the search radius.
-- A-02 Military Base: Must-include near active installations. Name the base and
-  speak to PCS moves and deployment directly.
-
-**TIER 3 - FILL-IN (use only when Tier 1 + 2 don't fill all 4 slots)**
-- A-03 Local Schools: Less compelling than institutional anchors. Best for
-  Growing Families persona only. Not a reflexive add-on.
-- A-04 Notable Landmark: Earns its own bullet only when the landmark is broadly
-  recognizable without explanation (stadium, regional hospital, major attraction).
-  If you'd have to explain what it is, weave it into intro copy instead.
-
-**TIER 4 - INTRO MENTION ONLY (rarely justify their own bullet)**
-- L-01 Marina/Waterfront: Own bullet only when boat storage is confirmed AND no
-  stronger option is available. Otherwise, reference in intro as lifestyle texture.
-- L-02 RV Park/Outdoor: Same logic as L-01. Own bullet only when RV storage is
-  confirmed and no better option exists.
-
-**Key Principle:** The goal is 4 bullets that tell a coherent, specific story
-about why THIS location is the right choice for THIS audience. A strong intro
-that mentions a nearby landmark is almost always better than a weak landmark bullet.
+**REMINDER**: Use 4 DIFFERENT categories.
 
 ------------------------------------------------------------
 ## REFERENCE MATERIALS
@@ -238,15 +185,25 @@ that mentions a nearby landmark is almost always better than a weak landmark bul
 Master Rulebook:
 {rules}
 
-Gold Standard Examples (Mimic this cadence, structure, and mixing strategy):
+Gold Standard Examples:
 {gold_standards}
+"""
 
+def _build_dynamic_data(row_dict):
+    """Builds the dynamic part of the prompt for a specific store."""
+    return f"""
 ------------------------------------------------------------
 ## LOCATION DATA FOR THIS STORE
 ------------------------------------------------------------
 
+[PRIMARY_CROSSROADS]: {row_dict.get('nearest_major_intersection', 'Not Available')}
+
 {json.dumps(row_dict, indent=2, default=str)}
 """
+
+def _build_prompt(rules, gold_standards, row_dict):
+    """Legacy helper for Gemini (no split)."""
+    return _build_static_context(rules, gold_standards) + _build_dynamic_data(row_dict)
 
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
@@ -285,13 +242,15 @@ Do not invent new categories.
 
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
 def generate_with_claude(client, rules, gold_standards, row_dict):
-    """Calls Claude 3.5 Sonnet to generate copy using Tool Use for structured JSON."""
-    prompt = _build_prompt(rules, gold_standards, row_dict)
+    """Calls Claude 3.5 Sonnet to generate copy using Tool Use and Prompt Caching."""
+    static_context = _build_static_context(rules, gold_standards)
+    dynamic_data = _build_dynamic_data(row_dict)
 
     # Anthropic "Tool Use" to force JSON structure equivalent to Pydantic schema
     response = client.messages.create(
         model=MODEL_NAME,
         max_tokens=2048,
+        extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}, # Ensure caching is enabled
         tools=[{
             "name": "generate_copy_draft",
             "description": "Generate a structured copy draft for an Extra Space Storage facility.",
@@ -312,20 +271,37 @@ def generate_with_claude(client, rules, gold_standards, row_dict):
             }
         }],
         tool_choice={"type": "tool", "name": "generate_copy_draft"},
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {
+                "role": "user", 
+                "content": [
+                    {
+                        "type": "text",
+                        "text": static_context,
+                        "cache_control": {"type": "ephemeral"} # Cache the heavy rules and examples
+                    },
+                    {
+                        "type": "text",
+                        "text": dynamic_data
+                    }
+                ]
+            }
+        ]
     )
     
     # Extract data from tool use response
     tool_use_block = next(block for block in response.content if block.type == "tool_use")
     data = tool_use_block.input
     
-    # Map usage metadata to match our tracker's format
+    # Map usage metadata to match our tracker's format, including cache stats for transparency
     usage = type('obj', (object,), {
         'prompt_token_count': response.usage.input_tokens,
-        'candidates_token_count': response.usage.output_tokens
+        'candidates_token_count': response.usage.output_tokens,
+        'cache_creation_input_tokens': getattr(response.usage, 'cache_creation_input_tokens', 0),
+        'cache_read_input_tokens': getattr(response.usage, 'cache_read_input_tokens', 0)
     })
     
-    return data, prompt, usage
+    return data, static_context + dynamic_data, usage
 
 
 def process_single_store(store_index, total_stores, row, db_pool, gemini_client, anthropic_client, rules, gold_standards):
@@ -356,6 +332,10 @@ def process_single_store(store_index, total_stores, row, db_pool, gemini_client,
         if db_geo:
             row_dict.update(db_geo)
 
+        # Rate limit protection for low-tier Anthropic accounts
+        if store_index > 1:
+            time.sleep(RATE_LIMIT_SLEEP)
+
         print(f"[{store_index}/{total_stores}] Store {store_num}: Requesting Copy from {MODEL_NAME}...", flush=True)
         
         if 'claude' in MODEL_NAME:
@@ -367,32 +347,47 @@ def process_single_store(store_index, total_stores, row, db_pool, gemini_client,
         input_tokens = usage.prompt_token_count or 0
         output_tokens = usage.candidates_token_count or 0
         rates = MODEL_COSTS.get(MODEL_NAME, {'input': 0, 'output': 0})
-        estimated_cost = (input_tokens * rates['input']) + (output_tokens * rates['output'])
+        
+        # Adjust input tokens based on cache hits (which are cheaper)
+        cache_creation_tokens = getattr(usage, 'cache_creation_input_tokens', 0)
+        cache_read_tokens = getattr(usage, 'cache_read_input_tokens', 0)
+        
+        # Anthropic Pricing for Caching: 
+        # Creation: +25% premium (1.25x)
+        # Read: 10% of base price (0.1x)
+        base_input_tokens = input_tokens - cache_creation_tokens - cache_read_tokens
+        estimated_cost = (
+            (base_input_tokens * rates['input']) + 
+            (cache_creation_tokens * rates['input'] * 1.25) + 
+            (cache_read_tokens * rates['input'] * 0.10) + 
+            (output_tokens * rates['output'])
+        )
 
         print(f"[{store_index}/{total_stores}] Store {store_num}: Saving Draft to Postgres (Cost: ${estimated_cost:,.4f})...", flush=True)
         cur.execute("""
-            INSERT INTO "CopyDraft" (
-                "facilityId", "introParagraph", "bullet1", "bullet1Tag", "bullet2", "bullet2Tag", 
-                "bullet3", "bullet3Tag", "bullet4", "bullet4Tag", "prompt", 
-                "inputTokens", "outputTokens", "cost", "modelName", "status", "updatedAt"
+            INSERT INTO \"CopyDraft\" (
+                \"facilityId\", \"introParagraph\", \"bullet1\", \"bullet1Tag\", \"bullet2\", \"bullet2Tag\", 
+                \"bullet3\", \"bullet3Tag\", \"bullet4\", \"bullet4Tag\", \"prompt\", 
+                \"inputTokens\", \"outputTokens\", \"cost\", \"modelName\", \"status\", \"updatedAt\"
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending', NOW())
-            ON CONFLICT ("facilityId") DO UPDATE SET
-            "introParagraph" = EXCLUDED."introParagraph",
-            "bullet1" = EXCLUDED."bullet1",
-            "bullet1Tag" = EXCLUDED."bullet1Tag",
-            "bullet2" = EXCLUDED."bullet2",
-            "bullet2Tag" = EXCLUDED."bullet2Tag",
-            "bullet3" = EXCLUDED."bullet3",
-            "bullet3Tag" = EXCLUDED."bullet3Tag",
-            "bullet4" = EXCLUDED."bullet4",
-            "bullet4Tag" = EXCLUDED."bullet4Tag",
-            "prompt" = EXCLUDED."prompt",
-            "inputTokens" = EXCLUDED."inputTokens",
-            "outputTokens" = EXCLUDED."outputTokens",
-            "cost" = EXCLUDED."cost",
-            "modelName" = EXCLUDED."modelName",
-            "updatedAt" = NOW();
+            ON CONFLICT (\"facilityId\") DO UPDATE SET
+            \"introParagraph\" = EXCLUDED.\"introParagraph\",
+            \"bullet1\" = EXCLUDED.\"bullet1\",
+            \"bullet1Tag\" = EXCLUDED.\"bullet1Tag\",
+            \"bullet2\" = EXCLUDED.\"bullet2\",
+            \"bullet2Tag\" = EXCLUDED.\"bullet2Tag\",
+            \"bullet3\" = EXCLUDED.\"bullet3\",
+            \"bullet3Tag\" = EXCLUDED.\"bullet3Tag\",
+            \"bullet4\" = EXCLUDED.\"bullet4\",
+            \"bullet4Tag\" = EXCLUDED.\"bullet4Tag\",
+            \"prompt\" = EXCLUDED.\"prompt\",
+            \"inputTokens\" = EXCLUDED.\"inputTokens\",
+            \"outputTokens\" = EXCLUDED.\"outputTokens\",
+            \"cost\" = EXCLUDED.\"cost\",
+            \"modelName\" = EXCLUDED.\"modelName\",
+            \"status\" = 'Pending',
+            \"updatedAt\" = NOW();
         """, (
             facility_id,
             copy_json.get('introParagraph', ''),
@@ -448,13 +443,23 @@ def main():
     
     df['Store Number'] = df['Store Number'].astype(str)
     test_df = df[df['Store Number'].isin(test_stores)].copy()
+    
+    # Apply targeted store filter if provided
+    if TARGET_STORES:
+        print(f"Filtering for targeted stores: {TARGET_STORES}")
+        test_df = test_df[test_df['Store Number'].isin([str(s) for s in TARGET_STORES])].copy()
+
     test_df['StoreNumInt'] = test_df['Store Number'].astype(int)
     test_df = test_df.sort_values('StoreNumInt')
     
-    if BATCH_LIMIT:
+    if BATCH_LIMIT and not TARGET_STORES:
         test_df = test_df.head(BATCH_LIMIT)
     
     total_stores = len(test_df)
+    if total_stores == 0:
+        print("No stores found to process.")
+        return
+
     print(f"Targeting {total_stores} facilities for generation.", flush=True)
     
     gemini_client = genai.Client(api_key=GOOGLE_API_KEY)
