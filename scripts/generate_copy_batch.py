@@ -9,6 +9,7 @@ import backoff
 from concurrent.futures import ThreadPoolExecutor
 from psycopg2 import pool
 from pydantic import BaseModel, Field
+import time
 import anthropic
 
 class CopyDraftSchema(BaseModel):
