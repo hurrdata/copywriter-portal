@@ -356,9 +356,8 @@ def process_single_store(store_index, total_stores, row, db_pool, gemini_client,
         # Anthropic Pricing for Caching: 
         # Creation: +25% premium (1.25x)
         # Read: 10% of base price (0.1x)
-        base_input_tokens = input_tokens - cache_creation_tokens - cache_read_tokens
         estimated_cost = (
-            (base_input_tokens * rates['input']) + 
+            (input_tokens * rates['input']) + 
             (cache_creation_tokens * rates['input'] * 1.25) + 
             (cache_read_tokens * rates['input'] * 0.10) + 
             (output_tokens * rates['output'])
