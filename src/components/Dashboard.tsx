@@ -104,11 +104,25 @@ export default function Dashboard({ initialFacilities }: { initialFacilities: an
     .sort((a, b) => parseInt(a.storeNumber, 10) - parseInt(b.storeNumber, 10))
 
   const handleSave = async () => {
-    if (!activeFacility?.draft) return
-    setFacilities(facilities.map(f =>
-      f.id === activeFacility.id ? { ...f, draft: { ...f.draft, ...editForm, status: 'Approved' } } : f
-    ))
-    await saveDraftContent(activeFacility.draft.id, editForm)
+    if (!activeFacility?.id) return
+    
+    // Get writer name from cookie if possible
+    const cookies = document.cookie.split('; ')
+    const nameCookie = cookies.find(row => row.startsWith('exr_writer_name='))
+    const writerName = nameCookie ? decodeURIComponent(nameCookie.split('=')[1]) : undefined
+
+    try {
+      // Optimistic update
+      setFacilities(facilities.map(f =>
+        f.id === activeFacility.id ? { ...f, draft: { ...f.draft, ...editForm, status: 'Approved' } } : f
+      ))
+      
+      await saveDraftContent(activeFacility.id, editForm, writerName)
+      alert("Changes saved and approved!")
+    } catch (error) {
+      console.error(error)
+      alert("Failed to save changes. Please refresh and try again.")
+    }
   }
 
   const generateHTML = () =>

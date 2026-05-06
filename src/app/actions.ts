@@ -29,26 +29,39 @@ export async function updateDraftStatus(draftId: number, status: string) {
   revalidatePath('/')
 }
 
-export async function saveDraftContent(draftId: number, data: {
+export async function saveDraftContent(facilityId: number, data: {
   introParagraph: string,
   bullet1: string,
+  bullet1Tag?: string,
   bullet2: string,
+  bullet2Tag?: string,
   bullet3: string,
-  bullet4: string
+  bullet3Tag?: string,
+  bullet4: string,
+  bullet4Tag?: string
 }, writerName?: string) {
-  await prisma.copyDraft.update({
-    where: { id: draftId },
-    data: {
-      introParagraph: data.introParagraph,
-      bullet1: data.bullet1,
-      bullet2: data.bullet2,
-      bullet3: data.bullet3,
-      bullet4: data.bullet4,
-      status: 'Approved', // Auto approve on manual save
-      approvedBy: writerName || 'Unknown Writer'
-    },
-  })
-  revalidatePath('/')
+  try {
+    await prisma.copyDraft.update({
+      where: { facilityId: facilityId },
+      data: {
+        introParagraph: data.introParagraph,
+        bullet1: data.bullet1,
+        bullet1Tag: data.bullet1Tag,
+        bullet2: data.bullet2,
+        bullet2Tag: data.bullet2Tag,
+        bullet3: data.bullet3,
+        bullet3Tag: data.bullet3Tag,
+        bullet4: data.bullet4,
+        bullet4Tag: data.bullet4Tag,
+        status: 'Approved', // Auto approve on manual save
+        approvedBy: writerName || 'Unknown Writer'
+      },
+    })
+    revalidatePath('/')
+  } catch (error) {
+    console.error("Failed to save draft content for facility:", facilityId, error)
+    throw new Error("Failed to save changes. Please try again.")
+  }
 }
 
 export async function verifyPassword(name: string, pwd: string) {
