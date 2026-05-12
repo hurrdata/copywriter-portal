@@ -569,6 +569,18 @@ def main():
     test_df['StoreNumInt'] = test_df['Store Number'].astype(int)
     test_df = test_df.sort_values('StoreNumInt')
     
+    # Filter out stores that already have drafts if we are not overwriting
+    if not OVERWRITE_EXISTING and not TARGET_STORES:
+        print("Filtering out already-completed stores...", flush=True)
+        conn = db_pool.getconn()
+        try:
+            cur = conn.cursor()
+            cur.execute('SELECT "storeNumber" FROM "Facility" f JOIN "CopyDraft" c ON f.id = c."facilityId"')
+            existing_stores = {str(r[0]) for r in cur.fetchall()}
+            test_df = test_df[~test_df['Store Number'].isin(existing_stores)].copy()
+        finally:
+            db_pool.putconn(conn)
+    
     if BATCH_LIMIT and not TARGET_STORES:
         test_df = test_df.head(BATCH_LIMIT)
     
