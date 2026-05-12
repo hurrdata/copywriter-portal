@@ -13,14 +13,14 @@ import time
 import anthropic
 
 class CopyDraftSchema(BaseModel):
-    introParagraph: str = Field(description="2-3 sentence intro grounding the reader in local geography and community. Must include the crossroads if provided.")
-    bullet1: str = Field(description="Full text of bullet 1.")
+    introParagraph: str = Field(description="EXACTLY 1-2 sentences. Must open with 'Our [Address] storage facility' or 'Our [City] storage facility'. Include the crossroads intersection. Mention one use case. NO zip codes. NO neighborhood names.")
+    bullet1: str = Field(description="Full text of bullet 1. No period at end.")
     bullet1Tag: str = Field(description="Category name. Must be EXACTLY one of: 'Home Community', 'Nearby Neighborhoods', 'Second City Draw', 'Interstate/Highway Exit', 'Airport Proximity', 'University/College Proximity', 'Military Base/Community', 'Local Schools', 'Notable Nearby Landmark', 'Marina/Waterfront', 'RV Park/Outdoor Recreation', 'Urban Residential Communities'")
-    bullet2: str = Field(description="Full text of bullet 2.")
+    bullet2: str = Field(description="Full text of bullet 2. No period at end.")
     bullet2Tag: str = Field(description="Category name (must be one of the 12 listed above).")
-    bullet3: str = Field(description="Full text of bullet 3.")
+    bullet3: str = Field(description="Full text of bullet 3. No period at end.")
     bullet3Tag: str = Field(description="Category name (must be one of the 12 listed above).")
-    bullet4: str = Field(description="Full text of bullet 4.")
+    bullet4: str = Field(description="Full text of bullet 4. No period at end.")
     bullet4Tag: str = Field(description="Category name (must be one of the 12 listed above).")
 
 
@@ -38,12 +38,13 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 # --- BATCH SETTINGS ---
-MODEL_NAME = 'claude-sonnet-4-6'              # Claude Sonnet 4.6
-BATCH_LIMIT = 100                          # Production test batch
-MAX_WORKERS = 1                            # Lowered to 1 to stay under 10k/min rate limit
-OVERWRITE_EXISTING = True                  # Forcing refresh to test the new model
-RATE_LIMIT_SLEEP = 30                      # Seconds to wait between stores to avoid 429s
-TARGET_STORES = []                         # If not empty, only process these store numbers (e.g. ['172'])
+MODEL_NAME = 'claude-sonnet-4-6'              # Step 2: Claude Sonnet 4.6 (copy writing)
+STRATEGY_MODEL = 'claude-haiku-4-5'           # Step 1: Claude Haiku (editorial strategy)
+BATCH_LIMIT = 100                             # Stores per run (next 100 of the 779 remaining)
+MAX_WORKERS = 1                               # Sequential to stay under rate limits
+OVERWRITE_EXISTING = False                    # Preserve editor-approved copy
+RATE_LIMIT_SLEEP = 30                         # Seconds between stores (Sonnet rate limit)
+TARGET_STORES = []                            # If not empty, only process these store numbers
 # ----------------------
 
 # Market rates per 1M tokens (USD)
@@ -52,6 +53,7 @@ MODEL_COSTS = {
     'gemini-2.0-flash': {'input': 0.10 / 1_000_000, 'output': 0.40 / 1_000_000},
     'gemini-1.5-pro':   {'input': 3.50 / 1_000_000, 'output': 10.50 / 1_000_000},
     'claude-sonnet-4-6': {'input': 3.00 / 1_000_000, 'output': 15.00 / 1_000_000},
+    'claude-haiku-4-5':  {'input': 0.80 / 1_000_000, 'output': 4.00 / 1_000_000},
     'claude-3-5-sonnet-20241022': {'input': 3.00 / 1_000_000, 'output': 15.00 / 1_000_000}
 }
 # ----------------------
@@ -98,85 +100,81 @@ def _build_static_context(rules, gold_standards):
 You are an Extra Space Storage SEO copywriter. Your task is to write the
 'About Our Location' section for a specific facility page.
 
-You must strictly follow the rules in the EXR Content Bullet Library AND the
-Strategic Market Direction below. Strategic rules take full precedence.
+You will receive a pre-built EDITORIAL STRATEGY from Step 1. Follow it precisely.
+The strategy locks in which bullet categories to use, which zip codes to feature,
+and what use case angle to take. Your job is execution — write the prose.
 
 ------------------------------------------------------------
-## EDITORIAL GUIDELINES (CRITICAL)
+## CRITICAL STYLE RULES (non-negotiable)
 ------------------------------------------------------------
 
-- **CONCISENESS**: Bullet points must be concise, punchy, and strictly focused on their specific topic. Avoid fluff.
-- **UNIQUE CATEGORIES**: Every bullet in a store's draft MUST have a unique category tag. Never repeat a category (e.g., do not have two "Home Community" bullets).
-- **AGE HANDLING**: Resident age data (e.g. "Wtd. Median Age") is provided for context only. NEVER explicitly mention ages, age brackets, or "seniors" in the copy. Use this data only to shift the tone (e.g., toward downsizing or convenience).
-- **HUMAN VOICE**: Avoid common AI indicators. DO NOT use em dashes (—). Use simple, direct language. Avoid "perfect" marketing transitions. Write like a local.
+### INTRO PARAGRAPH
+- **EXACTLY 1-2 sentences. No more.**
+- Open with: "Our [Street Address] storage facility..." or "Our [City] storage facility..."
+- Include the crossroads/intersection.
+- Mention one relevant use case (downsizing, local moves, seasonal gear, student storage, apartment decluttering, etc.) based on the demographic tone in the strategy.
+- **NO zip codes in the intro.**
+- **NO neighborhood or apartment names in the intro.** Save those for bullets.
+
+### ZIP CODES
+- Zip codes appear in **bullets ONLY**, never in the intro.
+- Format: **City Name (ZIP)** — e.g., "North Lauderdale (33068)"
+- If a second zip has >10% share, give it its own bullet (Second City Draw or Nearby Neighborhoods).
+- Example: "A convenient option for residents throughout Tamarac (33321) and Lauderdale Lakes (33319)"
+
+### NEIGHBORHOODS & COMMUNITIES
+- Only use neighborhood names confirmed in `POIs — Neighborhoods` or `POIs — Residential Areas`.
+- Do NOT invent or assume neighborhood names.
+- If both POI fields are empty, make the bullet more general — do not fabricate.
+- Urban Residential Communities: use **exact apartment complex names** from `POIs — Residential Areas`.
+  Format: "Minutes from established apartment communities like [Name] and [Name], perfect for renters who need additional space at home"
+- Avoid trailer parks and vague 'downtown' or 'urban core' descriptions.
+
+### DEMOGRAPHICS — TONE ONLY, NO RAW NUMBERS
+- **Never** mention specific income figures (e.g., "$64K median income", "middle-income community").
+- **Never** mention renter percentages (e.g., "40% of residents are renters").
+- Use demographic data for tone and use case selection only:
+  - High renter rate → reference apartment decluttering or "extra space at home"
+  - Lower income → lead with value, flexibility, practical unit sizes
+  - High % families → seasonal gear, making room for the family
+  - High % seniors → downsizing, convenience (never mention 'seniors' or ages)
+
+### SEO KEYWORDS
+- Include city name or address naturally in the intro (once is enough).
+- Pattern: "Our [City] storage facility" or "Our [Address] storage facility is located in the heart of [City]"
+
+### DISTANCES — ALWAYS SPECIFIC
+- Always use an exact distance: "1.4 miles from I-95" not "near I-95" or "close to the freeway"
+- Pull exact distances from the provided location data.
+
+### STREET ABBREVIATIONS
+- Always abbreviate: Rd, Ave, Blvd, St, Dr, Ln, Hwy, Pkwy
+- Never spell out: Road, Avenue, Boulevard, Street, Drive, Lane, Highway, Parkway
+
+### BULLET FORMATTING
+- No period at the end of any bullet point.
+- No em dashes (—). Use a comma or rewrite the sentence.
+- Every bullet must have a unique category. No repeated categories.
+- Be concise and specific — no filler phrases.
 
 ------------------------------------------------------------
-## RULE HIERARCHY (highest priority first)
+## SEGMENT STRATEGY REFERENCE
 ------------------------------------------------------------
 
-### RULE 1 - SEGMENT STRATEGY (determines your overall angle)
-Read the 'Segment' field carefully. It controls the entire editorial direction.
+**SEGMENT A - HOME DOMINANT**: Bullet #1 = Home Community. Bullet #2 = Nearby Neighborhoods.
+**SEGMENT B - MIXED CATCHMENT**: Lead with Home Community or Nearby Neighborhoods.
+**SEGMENT C - HIGHLY DISTRIBUTED**: Lead with Interstate/Highway Exit or Airport Proximity.
+**MISALIGNED**: Ignore existing content angle. Build from data only.
 
-**SEGMENT A - HOME DOMINANT**
-This store's customers are overwhelmingly local (one ZIP code dominates).
-- Bullet #1 MUST be "Home Community" - describe the immediate neighborhood using
-  names from `POIs - Neighborhoods`. Be specific.
-- Bullet #2 MUST be "Nearby Neighborhoods" - list 2-3 specific neighborhood names.
-- Intro tone: warm, hyperlocal, community-focused.
+------------------------------------------------------------
+## TIERED BULLET SELECTION
+------------------------------------------------------------
 
-**SEGMENT B - MIXED CATCHMENT**
-This store draws from multiple ZIPs with no single dominant source.
-- Bullet #1 should be "Home Community" or "Nearby Neighborhoods".
-- Intro tone: balanced, access-forward, broad appeal.
-
-**SEGMENT C - HIGHLY DISTRIBUTED**
-Customers arrive from many different ZIP codes. No single community dominates.
-- Lead with convenience and access - prioritize "Interstate/Highway Exit" and
-  "Airport Proximity" bullets if distances qualify.
-- Intro tone: logistics-focused, location-advantage driven.
-
-**MISALIGNED**
-- Ignore existing content angle. Build from scratch using demographic and POI data.
-- Intro tone: reset to what the data supports.
-
----
-
-### RULE 2 - CROSSROADS (mandatory geography anchor)
-Include the crossroads if provided in the location data as the geographic anchor.
-
----
-
-### RULE 3 - CONTENT HOOK OVERRIDE (Bullet #2 only)
-If 'Content Hook (Bullet 2)' is provided, use that angle unless the Segment is "Misaligned".
-
----
-
-### RULE 4 - DEMOGRAPHIC MODIFIERS (apply after Segment rules)
-These adjust tone and secondary bullets.
-- MILITARY: < 15 mi -> include military angle.
-- SENIORS: Age > 55 -> shift tone toward downsizing/convenience (WITHOUT mentioning age).
-- UNIVERSITY: < 5 mi -> include student storage.
-- PREMIUM: Income > 100k -> use professional, secure tone.
-- RENTERS: Renter Rate > 40% -> reference apartment decluttering.
-
----
-
-### RULE 5 - ZIP COMMUNITY ACKNOWLEDGMENT
-If any Non-Home ZIP has a share > 10%, acknowledge that community by name.
-
----
-
-### RULE 6 - POI MINING
-Always pull real, specific names from `POIs - Neighborhoods`, `POIs - Schools`, and `POIs - Residential Areas`.
-
----
-### RULE 7 - TIERED BULLET SELECTION (fill from Tier 1 down)
-1. Tier 1: Home Community, Nearby Neighborhoods, Urban Residential Communities, Second City Draw.
-2. Tier 2: Interstate/Highway Exit, Airport Proximity, University/College Proximity, Military Base/Community.
-3. Tier 3: Local Schools, Notable Nearby Landmark.
-4. Tier 4: Marina/Waterfront, RV Park/Outdoor Recreation (intro mention preferred).
-
-**REMINDER**: Use 4 DIFFERENT categories.
+Fill from Tier 1 down. Stop when you have 4 unique categories.
+1. Tier 1: Home Community, Nearby Neighborhoods, Urban Residential Communities, Second City Draw
+2. Tier 2: Interstate/Highway Exit, Airport Proximity, University/College Proximity, Military Base/Community
+3. Tier 3: Local Schools, Notable Nearby Landmark
+4. Tier 4: Marina/Waterfront, RV Park/Outdoor Recreation
 
 ------------------------------------------------------------
 ## REFERENCE MATERIALS
@@ -196,7 +194,10 @@ def _build_dynamic_data(row_dict):
 ## LOCATION DATA FOR THIS STORE
 ------------------------------------------------------------
 
-[PRIMARY_CROSSROADS]: {row_dict.get('nearest_major_intersection', 'Not Available')}
+[FACILITY ADDRESS]: {row_dict.get('Address', 'Not Available')}
+[CITY]: {row_dict.get('City', 'Not Available')}
+[PRIMARY ZIP]: {row_dict.get('Zip', 'Not Available')}
+[CROSSROADS]: {row_dict.get('nearest_major_intersection', 'Not Available')}
 
 {json.dumps(row_dict, indent=2, default=str)}
 """
@@ -240,32 +241,141 @@ Do not invent new categories.
         return data, prompt, usage
 
 
+
+@backoff.on_exception(backoff.expo, Exception, max_tries=3)
+def generate_strategy_with_haiku(client, row_dict):
+    """
+    Step 1: Uses Claude Haiku to produce a structured editorial strategy for a store.
+    Plans which bullets, zip codes, neighborhoods, and use case angle to use.
+    Returns (strategy_dict, has_empty_poi_flag).
+    """
+    neighborhoods = row_dict.get('POIs \u2014 Neighborhoods', '') or ''
+    residential = row_dict.get('POIs \u2014 Residential Areas', '') or ''
+    has_empty_poi = not neighborhoods.strip() and not residential.strip()
+    zip_mix = row_dict.get('zip_customer_mix', []) or []
+    secondary_zips = [z for z in zip_mix if z.get('type') != 'Home' and z.get('share', 0) >= 10]
+
+    prompt = f"""You are an editorial strategist for Extra Space Storage SEO copy.
+Given the store data below, produce a concise editorial strategy as a JSON object.
+
+STORE DATA:
+- Address: {row_dict.get('Address', 'N/A')}
+- City: {row_dict.get('City', 'N/A')}
+- Primary ZIP: {row_dict.get('Zip', 'N/A')}
+- Segment: {row_dict.get('Segment', 'N/A')}
+- Crossroads: {row_dict.get('nearest_major_intersection', 'N/A')}
+- POIs Neighborhoods: {neighborhoods or 'EMPTY'}
+- POIs Residential Areas: {residential or 'EMPTY'}
+- ZIP Customer Mix: {json.dumps(zip_mix, default=str)}
+- Secondary ZIPs (>10% share): {json.dumps(secondary_zips, default=str)}
+- Wtd. Median Age: {row_dict.get('Wtd. Median Age', 'N/A')}
+- Wtd. Renter Rate %: {row_dict.get('Wtd. Renter Rate %', 'N/A')}
+- Wtd. Median Income: {row_dict.get('Wtd. Median Income', 'N/A')}
+- Wtd. % Under 18: {row_dict.get('Wtd. % Under 18', 'N/A')}
+- Content Hook (Bullet 2): {row_dict.get('Content Hook (Bullet 2)', 'N/A')}
+- Nearest Interstate: {row_dict.get('nearest_interstate', 'N/A')} ({row_dict.get('interstate_distance_mi', 'N/A')} mi)
+- POIs Interstate Exits: {row_dict.get('POIs \u2014 Interstate Exits', 'N/A')}
+- Nearest Airport: {row_dict.get('nearest_airport', 'N/A')} ({row_dict.get('airport_distance_mi', 'N/A')} mi)
+- Nearest University: {row_dict.get('nearest_university_verified', 'N/A')} ({row_dict.get('university_distance_mi', 'N/A')} mi)
+- Military Base Distance: {row_dict.get('military_base_distance_mi', 'N/A')} mi
+- Second City Draw: {row_dict.get('Second City Draw', 'N/A')}
+
+Produce a JSON object with these exact fields:
+{{
+  "use_case_angle": "one of: downsizing | apartment_decluttering | local_moves | seasonal_gear | student_storage | business_storage | general",
+  "demographic_tone": "brief tone note based on demographics. No raw numbers or percentages.",
+  "bullet_plan": [
+    {{"category": "Home Community", "zip": "City (ZIP)", "notes": "what to highlight"}},
+    {{"category": "Nearby Neighborhoods", "zip": "City (ZIP) if relevant", "notes": "specific neighborhood or apartment names from POI data only"}},
+    {{"category": "Interstate/Highway Exit", "zip": null, "notes": "exact exit number and distance in miles"}},
+    {{"category": "Local Schools", "zip": null, "notes": "school names if in POI data"}}
+  ],
+  "poi_data_available": true,
+  "flags": []
+}}
+
+Rules:
+- Exactly 4 bullets with UNIQUE categories from the 12 official EXR categories.
+- If secondary ZIPs exist (>10% share), use Second City Draw as a bullet.
+- If POIs Neighborhoods AND Residential Areas are EMPTY, set poi_data_available to false and add "EMPTY_POI" to flags.
+- Only reference neighborhoods/apartments that appear in the provided POI data.
+- Use exact distances (e.g., "1.4 miles") for all access bullets.
+- Do not mention specific income figures or renter percentages in demographic_tone.
+
+Respond with only the JSON object, no explanation.
+"""
+    response = client.messages.create(
+        model=STRATEGY_MODEL,
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    try:
+        raw = response.content[0].text.strip()
+        # Strip markdown code fences if Haiku wraps in ```json ... ```
+        if raw.startswith("```"):
+            raw = raw.split("```")[-2] if "```" in raw else raw
+            raw = raw.lstrip("json").strip()
+        strategy = json.loads(raw)
+    except Exception:
+        strategy = {
+            "use_case_angle": "general",
+            "demographic_tone": "general community",
+            "bullet_plan": [],
+            "poi_data_available": not has_empty_poi,
+            "flags": ["STRATEGY_PARSE_ERROR"]
+        }
+
+    if has_empty_poi and "EMPTY_POI" not in strategy.get("flags", []):
+        strategy.setdefault("flags", []).append("EMPTY_POI")
+
+    return strategy, has_empty_poi
+
+
 @backoff.on_exception(backoff.expo, Exception, max_tries=5)
-def generate_with_claude(client, rules, gold_standards, row_dict):
-    """Calls Claude 3.5 Sonnet to generate copy using Tool Use and Prompt Caching."""
+def generate_with_claude(client, rules, gold_standards, row_dict, strategy):
+    """
+    Step 2: Calls Claude Sonnet to write the final copy, guided by the Step 1 strategy.
+    Uses Prompt Caching on the static rules/examples context.
+    """
     static_context = _build_static_context(rules, gold_standards)
     dynamic_data = _build_dynamic_data(row_dict)
 
-    # Anthropic "Tool Use" to force JSON structure equivalent to Pydantic schema
+    strategy_block = f"""
+------------------------------------------------------------
+## EDITORIAL STRATEGY (from Step 1 — follow this precisely)
+------------------------------------------------------------
+
+Use Case Angle: {strategy.get('use_case_angle', 'general')}
+Demographic Tone: {strategy.get('demographic_tone', '')}
+POI Data Available: {strategy.get('poi_data_available', True)}
+
+Bullet Plan:
+{json.dumps(strategy.get('bullet_plan', []), indent=2)}
+
+IMPORTANT: If POI Data Available is false, make neighborhood bullets more general.
+Do NOT invent neighborhood or apartment names not confirmed in the location data.
+"""
+
     response = client.messages.create(
         model=MODEL_NAME,
         max_tokens=2048,
-        extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}, # Ensure caching is enabled
+        extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
         tools=[{
             "name": "generate_copy_draft",
             "description": "Generate a structured copy draft for an Extra Space Storage facility.",
             "input_schema": {
                 "type": "object",
                 "properties": {
-                    "introParagraph": {"type": "string", "description": "2-3 sentence intro grounding the reader in local geography and community. Must include the crossroads if provided."},
-                    "bullet1": {"type": "string", "description": "Full text of bullet 1."},
-                    "bullet1Tag": {"type": "string", "description": "Exact category name from the EXR Library (e.g. 'Home Community', 'Nearby Neighborhoods', etc.)"},
-                    "bullet2": {"type": "string", "description": "Full text of bullet 2."},
-                    "bullet2Tag": {"type": "string", "description": "Exact category name from the EXR Library"},
-                    "bullet3": {"type": "string", "description": "Full text of bullet 3."},
-                    "bullet3Tag": {"type": "string", "description": "Exact category name from the EXR Library"},
-                    "bullet4": {"type": "string", "description": "Full text of bullet 4."},
-                    "bullet4Tag": {"type": "string", "description": "Exact category name from the EXR Library"},
+                    "introParagraph": {"type": "string", "description": "EXACTLY 1-2 sentences. Open with 'Our [Address] storage facility' or 'Our [City] storage facility'. Include crossroads. Mention one use case from the strategy. NO zip codes. NO neighborhood names."},
+                    "bullet1": {"type": "string", "description": "Full text of bullet 1. No period at end."},
+                    "bullet1Tag": {"type": "string", "description": "Must be EXACTLY one of: 'Home Community', 'Nearby Neighborhoods', 'Second City Draw', 'Interstate/Highway Exit', 'Airport Proximity', 'University/College Proximity', 'Military Base/Community', 'Local Schools', 'Notable Nearby Landmark', 'Marina/Waterfront', 'RV Park/Outdoor Recreation', 'Urban Residential Communities'"},
+                    "bullet2": {"type": "string", "description": "Full text of bullet 2. No period at end."},
+                    "bullet2Tag": {"type": "string", "description": "Must be EXACTLY one of the 12 categories listed above."},
+                    "bullet3": {"type": "string", "description": "Full text of bullet 3. No period at end."},
+                    "bullet3Tag": {"type": "string", "description": "Must be EXACTLY one of the 12 categories listed above."},
+                    "bullet4": {"type": "string", "description": "Full text of bullet 4. No period at end."},
+                    "bullet4Tag": {"type": "string", "description": "Must be EXACTLY one of the 12 categories listed above."},
                 },
                 "required": ["introParagraph", "bullet1", "bullet1Tag", "bullet2", "bullet2Tag", "bullet3", "bullet3Tag", "bullet4", "bullet4Tag"]
             }
@@ -273,35 +383,34 @@ def generate_with_claude(client, rules, gold_standards, row_dict):
         tool_choice={"type": "tool", "name": "generate_copy_draft"},
         messages=[
             {
-                "role": "user", 
+                "role": "user",
                 "content": [
                     {
                         "type": "text",
                         "text": static_context,
-                        "cache_control": {"type": "ephemeral"} # Cache the heavy rules and examples
+                        "cache_control": {"type": "ephemeral"}
                     },
                     {
                         "type": "text",
-                        "text": dynamic_data
+                        "text": strategy_block + dynamic_data
                     }
                 ]
             }
         ]
     )
-    
-    # Extract data from tool use response
+
     tool_use_block = next(block for block in response.content if block.type == "tool_use")
     data = tool_use_block.input
-    
-    # Map usage metadata to match our tracker's format, including cache stats for transparency
+
     usage = type('obj', (object,), {
         'prompt_token_count': response.usage.input_tokens,
         'candidates_token_count': response.usage.output_tokens,
         'cache_creation_input_tokens': getattr(response.usage, 'cache_creation_input_tokens', 0),
         'cache_read_input_tokens': getattr(response.usage, 'cache_read_input_tokens', 0)
     })
-    
-    return data, static_context + dynamic_data, usage
+
+    return data, static_context + strategy_block + dynamic_data, usage
+
 
 
 def process_single_store(store_index, total_stores, row, db_pool, gemini_client, anthropic_client, rules, gold_standards):
@@ -339,7 +448,16 @@ def process_single_store(store_index, total_stores, row, db_pool, gemini_client,
         print(f"[{store_index}/{total_stores}] Store {store_num}: Requesting Copy from {MODEL_NAME}...", flush=True)
         
         if 'claude' in MODEL_NAME:
-            copy_json, final_prompt, usage = generate_with_claude(anthropic_client, rules, gold_standards, row_dict)
+            # Step 1: Generate editorial strategy with Haiku
+            print(f"[{store_index}/{total_stores}] Store {store_num}: Step 1 - Building strategy with {STRATEGY_MODEL}...", flush=True)
+            strategy, has_empty_poi = generate_strategy_with_haiku(anthropic_client, row_dict)
+            if has_empty_poi:
+                print(f"[{store_index}/{total_stores}] Store {store_num}: ⚠️  EMPTY_POI FLAG - no neighborhood/residential POI data found. Bullet will be general.", flush=True)
+            flags = strategy.get("flags", [])
+            if flags:
+                print(f"[{store_index}/{total_stores}] Store {store_num}: Strategy flags: {flags}", flush=True)
+            # Step 2: Write copy with Sonnet using the strategy
+            copy_json, final_prompt, usage = generate_with_claude(anthropic_client, rules, gold_standards, row_dict, strategy)
         else:
             copy_json, final_prompt, usage = generate_copy_for_facility(gemini_client, rules, gold_standards, row_dict)
         
