@@ -39,7 +39,7 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 # --- BATCH SETTINGS ---
 MODEL_NAME = 'claude-sonnet-4-6'              # Step 2: Claude Sonnet 4.6 (copy writing)
-STRATEGY_MODEL = 'claude-haiku-4-5'           # Step 1: Claude Haiku (editorial strategy)
+STRATEGY_MODEL = MODEL_NAME                   # Step 1: Claude Sonnet (editorial strategy)
 BATCH_LIMIT = 100                             # Stores per run (next 100 of the 779 remaining)
 MAX_WORKERS = 1                               # Sequential to stay under rate limits
 OVERWRITE_EXISTING = False                    # Preserve editor-approved copy
